@@ -1,0 +1,14 @@
+{
+  "settings": {
+    "theme": "dark",
+    "notifications": true,
+    "language": "en"
+  },
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "role": "admin"
+    }
+  ]
+}
