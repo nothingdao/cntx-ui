@@ -1,5 +1,4 @@
 // files/code/example.ts
-// test
 interface User {
   id: string
   name: string

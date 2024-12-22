@@ -1,0 +1,45 @@
+{
+  "lastAccessed": "2024-12-22T22:52:56.706Z",
+  "files": {
+    ".sourcery/config/bundle-ignore.ts": {
+      "lastBundled": null,
+      "isStaged": false
+    },
+    ".sourcery/state/file-status.json": {
+      "lastBundled": null,
+      "isStaged": false
+    },
+    "code/example.ts": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    "code/utils.ts": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    "docs/api-spec.md": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    "docs/requirements.txt": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    "README.md": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    "data/config.yaml": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    "data/sample.json": {
+      "lastBundled": "2024-12-22T22:52:56.105Z",
+      "isStaged": true
+    },
+    ".sourcery/bundles/initial/initial-bundle.json": {
+      "lastBundled": null,
+      "isStaged": false
+    }
+  }
+}

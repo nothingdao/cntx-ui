@@ -1,15 +1,14 @@
-# Claude Chat with File Watcher
+# Sourcery
 
-A web application for chatting with Claude while tracking and bundling local file changes.
+A web application for tracking and bundling local file changes in a manner that will be best for AI to consume.
 
 ## Features
 
-- Chat interface for Claude with model selection
 - File watcher for local directory monitoring
-- Git-like staging system for files
 - Bundle tracking per file
 - Real-time file change detection
 - File change history and bundle history
+- Chat interface for Claude with model selection
 
 ## Setup
 
@@ -17,7 +16,7 @@ A web application for chatting with Claude while tracking and bundling local fil
 
 ```bash
 git clone <repository-url>
-cd claude-chat
+cd sourcery
 ```
 
 2. Install dependencies
@@ -84,19 +83,67 @@ npm run dev
 
 Files can be in multiple states:
 
-- Watched: File is being monitored
-- Modified: File has changed
-- Staged: File is selected for bundling
+- Watched: File has not been added to the ignore list in the config
+- Ignored or Unwatched: File is not being monitored having been added to the ignore list
+- Modified: File has changed since it was last bundled
+- Staged: This concept is not required and we should do away with it in the codebase.
 - Bundled: File has been included in a bundle
 
-## Contributing
+The contents of the .watch directory should reflect our requriements to track the files according to the files states above.
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+## Example Project
 
-## License
+The example-project directory provides a sample project for testing the application. Select it in the UI to explore file monitoring, and bundling. You can safely delete this directory without affecting the application or test using your own directory. It is included purely for convenience.
 
-[Add your license here]
+## Concepts / Roadmap
+
+1. Project Initialization & Context
+
+```
+.watch/
+  config/
+    bundle-ignore.ts      # Like .gitignore but for bundles
+    categories.ts         # User-defined file groupings/tags
+    project-settings.ts   # Initial setup preferences
+  state/
+    bundles/
+      initial/           # First-time full project bundle
+      categories/        # Category-specific bundles
+    sent/               # History of what's been sent to Claude
+    file-status.json    # Tracks changes since last bundle/send
+```
+
+2. Main Features
+
+- Project Initialization
+
+  - First-time setup wizard
+  - Bundle ignore patterns
+  - Category/tag definitions
+  - Initial full project bundle
+
+- File Tracking
+
+  - Changes since last bundle
+  - Git status integration (if possible)
+  - Category/tag assignments
+  - File metadata (bundled state, sent state)
+
+- Bundle Management
+
+  - Initial project bundle
+  - Category-based bundles
+  - Abstract bundles (based on tags/categories)
+  - Bundle history
+
+- UI Views
+  - File Tree with statuses
+    - Bundle status (bundled/changed)
+    - Git status (if available)
+    - Category indicators
+  - Category/Tag View
+    - Files grouped by category
+    - Bundle status per category
+  - Bundle History
+    - When bundles were created
+    - When they were sent to Claude

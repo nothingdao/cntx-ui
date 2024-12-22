@@ -1,44 +1,21 @@
 // src/utils/config-utils.ts
 import { WatchConfig, DEFAULT_CONFIG } from '../types/watch-config'
 
-// Simple glob matching (can be enhanced later)
-export function matchesPattern(path: string, pattern: string): boolean {
-  // Convert glob pattern to regex
-  const regexPattern = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*')
-  const regex = new RegExp(`^${regexPattern}$`)
-  return regex.test(path)
-}
-
 export function shouldIgnorePath(
   path: string,
-  config: WatchConfig,
-  isDirectory: boolean = false
+  config: { ignore: string[]; include?: string[] }
 ): boolean {
-  // If it's a directory, only check exact matches in ignore list
-  if (isDirectory) {
-    return config.ignore.includes(path)
-  }
-
-  // For files, check both exact matches and patterns
-  if (
-    config.ignore.some((pattern) => {
-      return path.includes(pattern) || matchesPattern(path, pattern)
-    })
-  ) {
-    return true
-  }
-
-  // If include patterns exist, path must match one
-  if (config.include && config.include.length > 0) {
-    return !config.include.some((pattern) => matchesPattern(path, pattern))
-  }
-
-  return false
+  return config.ignore.some((pattern) => {
+    const normalizedPattern = pattern.replace(/^\.\//, '') // Remove leading ./
+    return (
+      path.startsWith(normalizedPattern) ||
+      path.includes('/' + normalizedPattern + '/')
+    )
+  })
 }
 
 export function parseConfigFile(content: string): WatchConfig {
   try {
-    // Simple approach: look for export default {} and parse as JSON
     const match = content.match(/export\s+default\s+({[\s\S]*?});/)
     if (!match) {
       console.warn('Could not parse config file, using defaults')
@@ -54,7 +31,7 @@ export function parseConfigFile(content: string): WatchConfig {
   }
 }
 
-export function validateConfig(config: any): WatchConfig {
+export function validateConfig(config: Partial<WatchConfig>): WatchConfig {
   const validatedConfig: WatchConfig = {
     ignore: Array.isArray(config.ignore)
       ? config.ignore

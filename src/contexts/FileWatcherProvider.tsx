@@ -2,16 +2,24 @@
 import { type ReactNode, useState, useEffect, useCallback, useMemo } from 'react';
 import { FileWatcherContext, type WatchedFile } from './FileWatcherContext';
 import { getPathParts } from '../utils/file-utils';
-import { DEFAULT_CONFIG, type WatchConfig } from '../types/watch-config';
-import { parseConfigFile, createConfigContent, shouldIgnorePath } from '../utils/config-utils';
-import { initializeWatchDirectory, saveState, type WatchState } from '../utils/watch-utils';
+import { shouldIgnorePath } from '../utils/config-utils';
+import {
+  initializeWatchDirectory,
+  saveState,
+  createInitialBundle,
+  loadBundleIgnore,
+  type WatchState
+} from '../utils/watch-utils';
+import { InitializationModal } from '../components/InitializationModal';
+import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem';
 
 export function FileWatcherProvider({ children }: { children: ReactNode }) {
   const [watchedFiles, setWatchedFiles] = useState<WatchedFile[]>([]);
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [watchDir, setWatchDir] = useState<FileSystemDirectoryHandle | null>(null);
   const [isWatching, setIsWatching] = useState(false);
-  const [config, setConfig] = useState<WatchConfig>(DEFAULT_CONFIG);
+  const [showInitModal, setShowInitModal] = useState(false);
+  const [ignorePatterns, setIgnorePatterns] = useState<string[]>([]);
 
   const updateFile = async (handle: FileSystemFileHandle, relativePath: string) => {
     try {
@@ -50,7 +58,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     for await (const entry of dirHandle.values()) {
       const entryPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
 
-      if (shouldIgnorePath(entryPath, config, entry.kind === 'directory')) {
+      if (shouldIgnorePath(entryPath, { ignore: ignorePatterns, include: [] }, entry.kind === 'directory')) {
         continue;
       }
 
@@ -60,50 +68,58 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
         await processDirectory(entry as FileSystemDirectoryHandle, entryPath);
       }
     }
-  }, [config]);
+  }, []);
 
   const selectDirectory = async () => {
     try {
+      // Clear existing state
       setWatchedFiles([]);
       setDirectoryHandle(null);
       setWatchDir(null);
       setIsWatching(false);
 
       const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
-      const { watchDir: newWatchDir } = await initializeWatchDirectory(dirHandle);
 
-      setWatchDir(newWatchDir);
-      setDirectoryHandle(dirHandle);
-      setIsWatching(true);
-
-      const loadedConfig = await getOrCreateConfig(dirHandle);
-      setConfig(loadedConfig);
-
-      await processDirectory(dirHandle);
+      // Check for .sourcery directory
+      try {
+        const existingWatchDir = await dirHandle.getDirectoryHandle('.sourcery');
+        setWatchDir(existingWatchDir);
+        setDirectoryHandle(dirHandle);
+        setIsWatching(true);
+        await processDirectory(dirHandle);
+      } catch {
+        // No .sourcery directory, show initialization modal
+        setDirectoryHandle(dirHandle);
+        setShowInitModal(true);
+      }
     } catch (error) {
       console.error('Error selecting directory:', error);
-      setIsWatching(false);
     }
   };
 
-  const getOrCreateConfig = async (dirHandle: FileSystemDirectoryHandle): Promise<WatchConfig> => {
+  const handleInitComplete = async () => {
+    if (!directoryHandle) return;
+
     try {
-      const configHandle = await dirHandle.getFileHandle('watch.config.ts');
-      const file = await configHandle.getFile();
-      const content = await file.text();
-      return parseConfigFile(content);
-    } catch {
-      try {
-        const configHandle = await dirHandle.getFileHandle('watch.config.ts', { create: true });
-        const writable = await configHandle.createWritable();
-        const content = createConfigContent(DEFAULT_CONFIG);
-        await writable.write(content);
-        await writable.close();
-        return DEFAULT_CONFIG;
-      } catch (error) {
-        console.error('Error creating config:', error);
-        return DEFAULT_CONFIG;
-      }
+      const { watchDir: newWatchDir } = await initializeWatchDirectory(directoryHandle);
+      setWatchDir(newWatchDir);
+
+      // Load ignore patterns first
+      const patterns = await loadBundleIgnore(newWatchDir);
+      setIgnorePatterns(patterns);
+
+      // Then process files
+      await processDirectory(directoryHandle);
+
+      // Create initial bundle with non-ignored files
+      const filePaths = watchedFiles.map(f => f.path);
+      await createInitialBundle(directoryHandle, filePaths);
+
+      // Update states
+      setIsWatching(true);
+      setShowInitModal(false);
+    } catch (error) {
+      console.error('Error completing initialization:', error);
     }
   };
 
@@ -169,6 +185,11 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <InitializationModal
+        isOpen={showInitModal}
+        onComplete={handleInitComplete}
+        dirHandle={directoryHandle!}
+      />
     </FileWatcherContext.Provider>
   );
 }
