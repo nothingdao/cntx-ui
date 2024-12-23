@@ -22,7 +22,13 @@ export const sendMessage = async (
       messages: messages,
     })
 
-    return response.content[0].text
+    // Handle different types of content blocks
+    const textContent = response.content.find((block) => block.type === 'text')
+    if (textContent && 'text' in textContent) {
+      return textContent.text
+    }
+
+    throw new Error('No text content found in response')
   } catch (error) {
     console.error('Error sending message to Claude:', error)
     throw error

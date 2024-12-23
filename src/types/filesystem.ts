@@ -1,9 +1,7 @@
 // src/types/filesystem.ts
-
 export interface FileSystemHandle {
   kind: 'file' | 'directory'
   name: string
-  isSameEntry(other: FileSystemHandle): Promise<boolean>
 }
 
 export interface FileSystemWritableFileStream extends WritableStream {
@@ -14,10 +12,14 @@ export interface FileSystemWritableFileStream extends WritableStream {
 
 export interface FileSystemFileHandle extends FileSystemHandle {
   kind: 'file'
+  getFile(): Promise<File>
   createWritable(options?: {
     keepExistingData?: boolean
   }): Promise<FileSystemWritableFileStream>
-  getFile(): Promise<File>
+  isSameEntry(other: FileSystemHandle): Promise<boolean>
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+  keys(): AsyncIterableIterator<string>
+  values(): AsyncIterableIterator<FileSystemHandle>
 }
 
 export interface FileSystemDirectoryHandle extends FileSystemHandle {
@@ -32,7 +34,12 @@ export interface FileSystemDirectoryHandle extends FileSystemHandle {
   ): Promise<FileSystemFileHandle>
   removeEntry(name: string, options?: { recursive?: boolean }): Promise<void>
   resolve(possibleDescendant: FileSystemHandle): Promise<string[] | null>
+  [Symbol.asyncIterator](): AsyncIterableIterator<FileSystemHandle>
+  isSameEntry(other: FileSystemHandle): Promise<boolean>
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+  keys(): AsyncIterableIterator<string>
   values(): AsyncIterableIterator<FileSystemHandle>
+  [Symbol.asyncIterator](): AsyncIterableIterator<[string, FileSystemHandle]>
 }
 
 declare global {

@@ -1,14 +1,14 @@
-// src/components/Chat/ChatContainer.tsx
+// src/components/Chat/ApplicationContainer.tsx
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { sendMessage, type ClaudeModel } from '../../services/claude';
-import { useFileWatcher } from '../../hooks/useFileWatcher';
-import { FileWatcherPanel } from '../FileWatcherPanel';
+import { sendMessage, type ClaudeModel } from '../services/claude';
+import { useFileWatcher } from '../hooks/useFileWatcher';
+import { FileWatcherPanel } from './FileWatcherPanel';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, MessageSquare, Code } from "lucide-react";
+import { Send, Bot, MessageSquare } from "lucide-react";
 
 type Message = {
   role: 'user' | 'assistant';
@@ -21,7 +21,7 @@ const MODELS: { value: ClaudeModel; label: string }[] = [
   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' }
 ];
 
-export const ChatContainer = () => {
+export const ApplicationContainer = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState<ClaudeModel>('claude-3-opus-20240229');
@@ -36,7 +36,7 @@ export const ChatContainer = () => {
         .map(file => `<document>\n<source>${file.path}</source>\n<content>${file.content}</content>\n</document>`)
         .join('\n\n');
 
-      const messagesWithContext = [...updatedMessages];
+      const messagesWithContext = [...updatedMessages] as { role: 'user' | 'assistant'; content: string; }[];
       if (fileContext) {
         messagesWithContext[messagesWithContext.length - 1] = {
           ...messagesWithContext[messagesWithContext.length - 1],
@@ -47,13 +47,7 @@ export const ChatContainer = () => {
       const response = await sendMessage(messagesWithContext, selectedModel);
       return response;
     },
-    onSuccess: (response) => {
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: response }
-      ]);
-      setInput('');
-    },
+    // ... rest of the code remains the same
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +65,8 @@ export const ChatContainer = () => {
         <FileWatcherPanel />
       </div>
 
-      {/* Chat Column */}
+      {/* Main Column */}
+      {/* We should move the chat UI to a separate component becuase this main clmn will load columns as needed */}
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-center space-x-2 py-2 border-b">
           <Bot className="h-5 w-5" />
@@ -132,13 +127,12 @@ export const ChatContainer = () => {
         </form>
       </div>
 
-      {/* Artifact Column */}
+      {/* Secondary Column */}
       <div className="bg-gray-50 p-4 rounded-lg shadow-sm border">
         <div className="flex items-center space-x-2 mb-4">
-          <Code className="h-5 w-5" />
-          <h2 className="text-lg font-semibold">Artifacts</h2>
+          <h2 className="text-lg font-semibold">Secondary Content</h2>
         </div>
-        <div className="text-gray-500">No artifacts yet</div>
+        <div className="text-gray-500">No content loded</div>
       </div>
     </div>
   );

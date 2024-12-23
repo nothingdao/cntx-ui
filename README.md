@@ -75,7 +75,7 @@ npm run dev
 ### Key Components
 
 - `FileWatcherPanel`: UI for file monitoring and staging
-- `ChatContainer`: Main chat interface
+- `ApplicationContainer`: Main application container
 - `FileWatcherProvider`: Context provider for file state management
 - `FileWatcherContext`: Context for sharing file state
 
@@ -91,24 +91,20 @@ Files can be in multiple states:
 
 The contents of the .watch directory should reflect our requriements to track the files according to the files states above.
 
-## Example Project
-
-The example-project directory provides a sample project for testing the application. Select it in the UI to explore file monitoring, and bundling. You can safely delete this directory without affecting the application or test using your own directory. It is included purely for convenience.
-
-## Concepts / Roadmap
+## Concepts
 
 1. Project Initialization & Context
 
 ```
-.watch/
+.sourcery/
   config/
     bundle-ignore.ts      # Like .gitignore but for bundles
-    categories.ts         # User-defined file groupings/tags
+    tags.ts         # User-defined file groupings/tags
     project-settings.ts   # Initial setup preferences
   state/
     bundles/
       initial/           # First-time full project bundle
-      categories/        # Category-specific bundles
+      tags/        # Category-specific bundles
     sent/               # History of what's been sent to Claude
     file-status.json    # Tracks changes since last bundle/send
 ```
@@ -118,32 +114,30 @@ The example-project directory provides a sample project for testing the applicat
 - Project Initialization
 
   - First-time setup wizard
-  - Bundle ignore patterns
-  - Category/tag definitions
-  - Initial full project bundle
+  - Bundle ignore patterns: defaults we have defined in the default config should be applied. User can add more manually. We are not building a UI for this.
+  - Initial full project bundle: We need to bundle the entire project initially. This should inlude all files that are not being ignored. It should go in the `.sourcery/bundles/initial` directory. It should be created when the user first sets up the project using the `InitializationModal.tsx`.
 
 - File Tracking
 
-  - Changes since last bundle
-  - Git status integration (if possible)
-  - Category/tag assignments
-  - File metadata (bundled state, sent state)
+  - Changes since last bundle: We need to track changes to files since the last bundle. This should be stored in the `.sourcery/state/file-status.json` file. This file should be updated whenever a file is modified.
+  - Tag assignments
+  - File metadata (bundled state, sent state)...
 
 - Bundle Management
 
   - Initial project bundle
-  - Category-based bundles
-  - Abstract bundles (based on tags/categories)
+  - Tag-based bundles
+  - Abstract bundles (based on tags/tags)
   - Bundle history
 
 - UI Views
   - File Tree with statuses
     - Bundle status (bundled/changed)
     - Git status (if available)
-    - Category indicators
-  - Category/Tag View
-    - Files grouped by category
-    - Bundle status per category
+    - Tag indicators
+  - Tag View
+    - Files grouped by tag
+    - Bundle status per tag
   - Bundle History
     - When bundles were created
     - When they were sent to Claude

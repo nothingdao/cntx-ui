@@ -9,6 +9,8 @@ export const DEFAULT_BUNDLE_IGNORE = [
   '.cache',
   'package-lock.json',
   'yarn.lock',
+  'example-project',
+  '.DS_Store',
 ]
 
 async function createDirectoryStructure(watchDir: FileSystemDirectoryHandle) {
@@ -72,11 +74,7 @@ export async function createInitialBundle(
 
     // Get initial bundle directory
     const bundlesDir = await watchDir.getDirectoryHandle('bundles')
-    const initialDir = await bundlesDir.getDirectoryHandle('initial')
-
-    // Create the bundle (implementation needed)
-    // This will use our existing bundle creation code
-    // but save to the initial bundle directory
+    await bundlesDir.getDirectoryHandle('initial')
 
     // Update state file with initial bundle info
     const stateDir = await watchDir.getDirectoryHandle('state')
@@ -86,7 +84,7 @@ export async function createInitialBundle(
 
     state.initialBundle = {
       created: new Date().toISOString(),
-      fileCount: 0, // Update with actual count
+      fileCount: 0,
     }
 
     const writable = await stateHandle.createWritable()

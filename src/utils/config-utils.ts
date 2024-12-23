@@ -3,13 +3,52 @@ import { WatchConfig, DEFAULT_CONFIG } from '../types/watch-config'
 
 export function shouldIgnorePath(
   path: string,
-  config: { ignore: string[]; include?: string[] }
+  config: { ignore: string[]; include?: string[] },
+  isDirectory: boolean = false
 ): boolean {
+  // Debug log BEFORE any modifications
+  console.log('shouldIgnorePath called with:', {
+    originalPath: path,
+    patterns: config.ignore,
+    isDirectory,
+  })
+
+  // Normalize path for consistency
+  const normalizedPath = path.toLowerCase().replace(/\\/g, '/')
+
+  // Debug log AFTER normalization
+  console.log('Normalized path:', normalizedPath)
+
+  // Rest of your function stays exactly the same
+  if (
+    normalizedPath === '.sourcery' ||
+    normalizedPath.startsWith('.sourcery/')
+  ) {
+    return true
+  }
+
   return config.ignore.some((pattern) => {
-    const normalizedPattern = pattern.replace(/^\.\//, '') // Remove leading ./
+    // Normalize pattern for consistency
+    const normalizedPattern = pattern.toLowerCase().replace(/^\.\//, '')
+
+    // Debug log for each pattern check
+    console.log('Checking against pattern:', normalizedPattern)
+
+    if (isDirectory) {
+      // For directories, check if the path matches exactly or is a subdirectory
+      return (
+        normalizedPath === normalizedPattern ||
+        normalizedPath.startsWith(normalizedPattern + '/') ||
+        normalizedPath.endsWith('/' + normalizedPattern) ||
+        normalizedPath.includes('/' + normalizedPattern + '/')
+      )
+    }
+
+    // For files, check if the path matches the pattern
     return (
-      path.startsWith(normalizedPattern) ||
-      path.includes('/' + normalizedPattern + '/')
+      normalizedPath === normalizedPattern ||
+      normalizedPath.includes('/' + normalizedPattern) ||
+      normalizedPath.startsWith(normalizedPattern + '/')
     )
   })
 }

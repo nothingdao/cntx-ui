@@ -1,6 +1,6 @@
 // src/components/DirectoryTree.tsx
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FileIcon } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileIcon, SquareDot } from 'lucide-react';
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import type { WatchedFile } from '../contexts/FileWatcherContext';
@@ -12,14 +12,10 @@ type DirectoryTreeProps = {
 };
 
 function getDirectoryFiles(dir: string, files: WatchedFile[]): WatchedFile[] {
-  if (dir === 'Root') {
-    return files.filter(f => !f.directory || f.directory === 'Root');
-  }
   return files.filter(f => f.directory === dir);
 }
 
 function getDirectoryLabel(dir: string): string {
-  if (dir === 'Root') return 'Root';
   return dir.split('/').pop() || dir;
 }
 
@@ -35,9 +31,7 @@ function FileRow({ file, onToggleStage }: { file: WatchedFile; onToggleStage: ()
         {file.name}
       </span>
       {file.isChanged && (
-        <span className="text-xs bg-yellow-100 text-yellow-800 rounded-full px-2 py-0.5">
-          Modified
-        </span>
+        <SquareDot size={16} strokeWidth={0.5} />
       )}
     </div>
   );
@@ -46,8 +40,12 @@ function FileRow({ file, onToggleStage }: { file: WatchedFile; onToggleStage: ()
 export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(['Root']));
 
-  // Get all unique directories including parent directories
-  const directories = getAllDirectories(files.map(f => f.path));
+  // Get all directories except Root
+  const directories = getAllDirectories(files.map(f => f.path))
+    .filter(dir => dir !== 'Root');
+
+  // Get files that are directly in the root (no directory)
+  const rootFiles = files.filter(f => f.directory === 'Root');
 
   const toggleDirectory = (dir: string) => {
     const newExpanded = new Set(expandedDirs);
@@ -61,15 +59,24 @@ export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
 
   return (
     <div className="space-y-1">
+      {/* Render root files first */}
+      {rootFiles.map(file => (
+        <FileRow
+          key={file.path}
+          file={file}
+          onToggleStage={() => onToggleStage(file.path)}
+        />
+      ))}
+
+      {/* Then render the directory tree */}
       {directories.map(dir => {
         const isExpanded = expandedDirs.has(dir);
         const dirFiles = getDirectoryFiles(dir, files);
         const displayName = getDirectoryLabel(dir);
 
-        // Don't show empty directories
         if (dirFiles.length === 0) return null;
 
-        const indent = dir === 'Root' ? 0 : dir.split('/').length;
+        const indent = dir.split('/').length - 1;
 
         return (
           <div key={dir} className="space-y-0.5" style={{ marginLeft: `${indent * 12}px` }}>

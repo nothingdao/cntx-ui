@@ -1,6 +1,0 @@
-# Contents for requirements.txt
-# files/docs/requirements.txt
-User authentication
-File upload support
-Real-time notifications
-Data export functionality

@@ -1,5 +1,6 @@
 // src/contexts/FileWatcherContext.tsx
 import { createContext } from 'react';
+import type { Bundle } from '../types/bundle';
 
 export type WatchedFile = {
   path: string;
@@ -19,8 +20,11 @@ export type FileWatcherContextType = {
   selectDirectory: () => Promise<void>;
   refreshFiles: () => Promise<void>;
   isWatching: boolean;
-  createBundle: () => string;
+  createBundle: () => Promise<string>;
   toggleStaged: (path: string) => void;
+  bundles: Bundle[];
+  loadBundles: () => Promise<void>;
+  currentDirectory: string | null;
 };
 
 export const FileWatcherContext = createContext<FileWatcherContextType>({
@@ -29,6 +33,9 @@ export const FileWatcherContext = createContext<FileWatcherContextType>({
   selectDirectory: async () => { },
   refreshFiles: async () => { },
   isWatching: false,
-  createBundle: () => '',
+  createBundle: async () => '',
   toggleStaged: () => { },
+  bundles: [],
+  loadBundles: async () => { },
+  currentDirectory: null,
 });

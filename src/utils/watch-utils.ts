@@ -1,4 +1,6 @@
 // src/utils/watch-utils.ts
+import type { WatchedFile } from '../types/watcher'
+
 export const DEFAULT_BUNDLE_IGNORE = [
   'node_modules',
   '.git',
@@ -9,16 +11,31 @@ export const DEFAULT_BUNDLE_IGNORE = [
   '.cache',
   'package-lock.json',
   'yarn.lock',
+  'example-project',
+  '.DS_Store',
 ]
 
 export type WatchState = {
   lastAccessed: string
+  initialBundle?: {
+    bundleId: string
+    fileCount: number
+  }
   files: {
     [path: string]: {
-      lastBundled: string | null
+      lastBundleId: string | null
+      lastSentId: string | null
       isStaged: boolean
+      bundleTimestamp?: string
     }
   }
+}
+
+// Create a unique bundle ID with timestamp prefix for ordering
+function generateBundleId(): string {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const random = Math.random().toString(36).substring(2, 7)
+  return `bundle-${timestamp}-${random}`
 }
 
 export async function loadBundleIgnore(
@@ -30,20 +47,17 @@ export async function loadBundleIgnore(
     const file = await ignoreHandle.getFile()
     const content = await file.text()
 
-    // Extract the array from the default export
-    const match = content.match(/export\s+default\s+(\[[\s\S]*?\])\s+as/)
+    const match = content.match(/\[([\s\S]*?)\]/)
     if (!match) {
-      console.warn('Could not parse bundle-ignore.ts, using defaults')
       return DEFAULT_BUNDLE_IGNORE
     }
 
-    try {
-      const patterns = JSON.parse(match[1])
-      return patterns
-    } catch {
-      console.warn('Could not parse ignore patterns, using defaults')
-      return DEFAULT_BUNDLE_IGNORE
-    }
+    const arrayContent = match[1]
+      .split(',')
+      .map((item) => item.trim().replace(/"/g, ''))
+      .filter((item) => item.length > 0)
+
+    return arrayContent
   } catch (error) {
     console.error('Error loading bundle ignore patterns:', error)
     return DEFAULT_BUNDLE_IGNORE
@@ -128,47 +142,120 @@ export async function saveState(
 }
 
 export async function createInitialBundle(
-  dirHandle: FileSystemDirectoryHandle,
-  files: string[]
-) {
-  const watchDir = await dirHandle.getDirectoryHandle('.sourcery')
-  const bundlesDir = await watchDir.getDirectoryHandle('bundles')
-  const initialDir = await bundlesDir.getDirectoryHandle('initial')
+  watchedFiles: WatchedFile[],
+  watchDir: FileSystemDirectoryHandle,
+  bundleContent: string
+): Promise<{ success: boolean; error?: string; bundleId?: string }> {
+  try {
+    const bundleId = generateBundleId()
+    const timestamp = new Date().toISOString()
+    const bundlesDir = await watchDir.getDirectoryHandle('bundles')
+    const initialDir = await bundlesDir.getDirectoryHandle('initial')
 
-  // Create the bundle file
-  const bundleHandle = await initialDir.getFileHandle('initial-bundle.json', {
-    create: true,
-  })
-  const writable = await bundleHandle.createWritable()
-  await writable.write(
-    JSON.stringify(
+    // Create the initial bundle file
+    const bundleHandle = await initialDir.getFileHandle(`${bundleId}.txt`, {
+      create: true,
+    })
+    const writable = await bundleHandle.createWritable()
+    await writable.write(bundleContent)
+    await writable.close()
+
+    // Create a manifest file with metadata
+    const manifestHandle = await initialDir.getFileHandle(
+      `${bundleId}-manifest.json`,
       {
-        created: new Date().toISOString(),
-        files,
-      },
-      null,
-      2
+        create: true,
+      }
     )
-  )
-  await writable.close()
-
-  // Update state to reflect initial bundle
-  const stateDir = await watchDir.getDirectoryHandle('state')
-  const stateHandle = await stateDir.getFileHandle('file-status.json')
-  const file = await stateHandle.getFile()
-  const state: WatchState = JSON.parse(await file.text())
-
-  // Mark all files as bundled
-  files.forEach((filePath) => {
-    state.files[filePath] = {
-      lastBundled: new Date().toISOString(),
-      isStaged: false,
+    const manifestWritable = await manifestHandle.createWritable()
+    const manifest = {
+      bundleId,
+      created: timestamp,
+      fileCount: watchedFiles.length,
+      files: watchedFiles.map((file) => ({
+        path: file.path,
+        lastModified: file.lastModified.toISOString(),
+      })),
     }
-  })
+    await manifestWritable.write(JSON.stringify(manifest, null, 2))
+    await manifestWritable.close()
 
-  await saveState(watchDir, state)
+    // Update state file
+    const stateDir = await watchDir.getDirectoryHandle('state')
+    const stateHandle = await stateDir.getFileHandle('file-status.json')
+    const file = await stateHandle.getFile()
+    const state: WatchState = JSON.parse(await file.text())
 
-  return files.length
+    // Update state with initial bundle info
+    state.initialBundle = {
+      bundleId,
+      fileCount: watchedFiles.length,
+    }
+
+    // Update file statuses
+    watchedFiles.forEach((file) => {
+      state.files[file.path] = {
+        lastBundleId: bundleId,
+        lastSentId: null,
+        isStaged: false,
+        bundleTimestamp: timestamp,
+      }
+    })
+
+    await saveState(watchDir, state)
+
+    return { success: true, bundleId }
+  } catch (error) {
+    console.error('Error creating initial bundle:', error)
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to create initial bundle',
+    }
+  }
+}
+
+export async function createBundle(
+  watchedFiles: WatchedFile[],
+  watchDir: FileSystemDirectoryHandle,
+  bundleContent: string
+): Promise<{ success: boolean; error?: string; bundleId?: string }> {
+  try {
+    const bundleId = generateBundleId()
+    const timestamp = new Date().toISOString()
+    const bundlesDir = await watchDir.getDirectoryHandle('bundles')
+
+    // Create the bundle file
+    const bundleHandle = await bundlesDir.getFileHandle(`${bundleId}.txt`, {
+      create: true,
+    })
+    const writable = await bundleHandle.createWritable()
+    await writable.write(bundleContent)
+    await writable.close()
+
+    // Update state
+    const state = await loadState(watchDir)
+    watchedFiles.forEach((file) => {
+      state.files[file.path] = {
+        ...state.files[file.path],
+        lastBundleId: bundleId,
+        isStaged: false,
+        bundleTimestamp: timestamp,
+      }
+    })
+
+    await saveState(watchDir, state)
+
+    return { success: true, bundleId }
+  } catch (error) {
+    console.error('Error creating bundle:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create bundle',
+    }
+  }
 }
 
 export async function loadState(

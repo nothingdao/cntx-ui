@@ -44,7 +44,7 @@ export function FileRow({ file, onToggleStage }: FileRowProps) {
         {file.isChanged && (
           <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full flex items-center space-x-1">
             <AlertCircle className="h-3 w-3" />
-            <span>Modified</span>
+            <span>M</span>
           </span>
         )}
       </div>
