@@ -36,8 +36,8 @@ export function InitializationModal({
     setStatus('loading');
     setError('');
     try {
-      // Initialize and get the .sourcery directory
-      const { sourceryDir: newSourceryDir } = await initializeProject(dirHandle);
+      // Initialize and get the .rufas directory
+      const { rufasDir: newSourceryDir } = await initializeProject(dirHandle);
 
       // Load ignore patterns
       const patterns = await loadBundleIgnore(newSourceryDir);
@@ -73,7 +73,7 @@ export function InitializationModal({
           <div className="space-y-2">
             <h4 className="font-medium">Initialize Project</h4>
             <p className="text-sm text-gray-500">
-              Creates a .sourcery directory in the root of your project with default configuration files and file tracking data.
+              Creates a .rufas directory in the root of your project with default configuration files and file tracking data.
             </p>
             <Button
               onClick={handleInitConfig}

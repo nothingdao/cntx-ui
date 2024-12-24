@@ -5,50 +5,48 @@ import type { FileSystemDirectoryHandle } from '../types/filesystem'
 import { TagsConfig } from '@/types/tags'
 
 /**
- * Creates the initial .sourcery directory structure and configuration
+ * Creates the initial .rufas directory structure and configuration
  * This is called once when a project is first set up
  */
 export async function initializeProject(dirHandle: FileSystemDirectoryHandle) {
   try {
-    // Create .sourcery directory
-    const sourceryDir = await dirHandle.getDirectoryHandle('.sourcery', {
+    // Create .rufas directory
+    const rufasDir = await dirHandle.getDirectoryHandle('.rufas', {
       create: true,
     })
 
     // Create directory structure
-    await createDirectoryStructure(sourceryDir)
+    await createDirectoryStructure(rufasDir)
 
     // Create initial configuration
-    await createInitialConfig(sourceryDir)
+    await createInitialConfig(rufasDir)
 
     // Initialize state file
-    await initializeStateFile(sourceryDir)
+    await initializeStateFile(rufasDir)
 
-    return { sourceryDir }
+    return { rufasDir }
   } catch (error) {
     console.error('Error initializing project:', error)
     throw new Error('Failed to initialize project: ' + (error as Error).message)
   }
 }
 
-async function createDirectoryStructure(
-  sourceryDir: FileSystemDirectoryHandle
-) {
+async function createDirectoryStructure(rufasDir: FileSystemDirectoryHandle) {
   // Create all required directories
-  await sourceryDir.getDirectoryHandle('config', { create: true })
-  const bundlesDir = await sourceryDir.getDirectoryHandle('bundles', {
+  await rufasDir.getDirectoryHandle('config', { create: true })
+  const bundlesDir = await rufasDir.getDirectoryHandle('bundles', {
     create: true,
   })
   await bundlesDir.getDirectoryHandle('master', { create: true })
-  await sourceryDir.getDirectoryHandle('sent', { create: true })
-  await sourceryDir.getDirectoryHandle('state', { create: true })
+  await rufasDir.getDirectoryHandle('sent', { create: true })
+  await rufasDir.getDirectoryHandle('state', { create: true })
 }
 
-async function createInitialConfig(sourceryDir: FileSystemDirectoryHandle) {
-  const configDir = await sourceryDir.getDirectoryHandle('config')
+async function createInitialConfig(rufasDir: FileSystemDirectoryHandle) {
+  const configDir = await rufasDir.getDirectoryHandle('config')
 
   // Create bundle-ignore.ts
-  const content = `// .sourcery/config/bundle-ignore.ts
+  const content = `// .rufas/config/bundle-ignore.ts
 export default ${JSON.stringify(DEFAULT_BUNDLE_IGNORE, null, 2)} as const;
 `
   const ignoreHandle = await configDir.getFileHandle('bundle-ignore.ts', {
@@ -59,7 +57,7 @@ export default ${JSON.stringify(DEFAULT_BUNDLE_IGNORE, null, 2)} as const;
   await writable.close()
 
   // Create tags.ts with default tags
-  const tagsContent = `// .sourcery/config/tags.ts
+  const tagsContent = `// .rufas/config/tags.ts
 export default ${JSON.stringify(DEFAULT_TAGS, null, 2)} as const;
 `
   const tagsHandle = await configDir.getFileHandle('tags.ts', { create: true })
@@ -68,8 +66,8 @@ export default ${JSON.stringify(DEFAULT_TAGS, null, 2)} as const;
   await tagsWritable.close()
 }
 
-async function initializeStateFile(sourceryDir: FileSystemDirectoryHandle) {
-  const stateDir = await sourceryDir.getDirectoryHandle('state')
+async function initializeStateFile(rufasDir: FileSystemDirectoryHandle) {
+  const stateDir = await rufasDir.getDirectoryHandle('state')
 
   const initialState: WatchState = {
     lastAccessed: new Date().toISOString(),
@@ -91,14 +89,14 @@ async function initializeStateFile(sourceryDir: FileSystemDirectoryHandle) {
  */
 export async function createMasterBundle(
   files: WatchedFile[],
-  sourceryDir: FileSystemDirectoryHandle
+  rufasDir: FileSystemDirectoryHandle
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {
   try {
     const bundleId = `master-${new Date().toISOString().replace(/[:.]/g, '-')}`
     const timestamp = new Date().toISOString()
 
     // Get the master bundle directory
-    const bundlesDir = await sourceryDir.getDirectoryHandle('bundles')
+    const bundlesDir = await rufasDir.getDirectoryHandle('bundles')
     const masterDir = await bundlesDir.getDirectoryHandle('master')
 
     // Create bundle content
@@ -150,14 +148,14 @@ export async function createMasterBundle(
  * Loads the bundle ignore patterns from the project configuration
  */
 export async function loadBundleIgnore(
-  sourceryDir: FileSystemDirectoryHandle
+  rufasDir: FileSystemDirectoryHandle
 ): Promise<string[]> {
   try {
-    const configDir = await sourceryDir.getDirectoryHandle('config')
+    const configDir = await rufasDir.getDirectoryHandle('config')
     const ignoreHandle = await configDir.getFileHandle('bundle-ignore.ts')
     const file = await ignoreHandle.getFile()
     const content = await file.text()
-    console.log('Loading bundle ignore content:', content)
+    // console.log('Loading bundle ignore content:', content)
 
     const match = content.match(/\[([\s\S]*?)\]/)
     if (!match) {
@@ -170,7 +168,7 @@ export async function loadBundleIgnore(
       .map((item) => item.trim().replace(/["']/g, ''))
       .filter((item) => item.length > 0)
 
-    console.log('Loaded ignore patterns:', arrayContent)
+    // console.log('Loaded ignore patterns:', arrayContent)
     return arrayContent
   } catch (error) {
     console.error('Error loading bundle ignore patterns:', error)
@@ -180,18 +178,18 @@ export async function loadBundleIgnore(
 }
 
 export async function saveTagsConfig(
-  sourceryDir: FileSystemDirectoryHandle,
+  rufasDir: FileSystemDirectoryHandle,
   tags: TagsConfig
 ) {
   try {
-    const configDir = await sourceryDir.getDirectoryHandle('config')
+    const configDir = await rufasDir.getDirectoryHandle('config')
     const tagsHandle = await configDir.getFileHandle('tags.ts', {
       create: true,
     })
     const writable = await tagsHandle.createWritable()
 
     // Preserve the export default format
-    const content = `// .sourcery/config/tags.ts
+    const content = `// .rufas/config/tags.ts
 export default ${JSON.stringify(tags, null, 2)} as const;
 `
 
@@ -203,10 +201,10 @@ export default ${JSON.stringify(tags, null, 2)} as const;
 }
 
 export async function loadTagsConfig(
-  sourceryDir: FileSystemDirectoryHandle
+  rufasDir: FileSystemDirectoryHandle
 ): Promise<TagsConfig> {
   try {
-    const configDir = await sourceryDir.getDirectoryHandle('config')
+    const configDir = await rufasDir.getDirectoryHandle('config')
     const tagsHandle = await configDir.getFileHandle('tags.ts')
     const file = await tagsHandle.getFile()
     const content = await file.text()

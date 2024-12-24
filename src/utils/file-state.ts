@@ -2,9 +2,9 @@
 import type { WatchedFile, WatchState } from '../types/watcher'
 
 export async function loadState(
-  sourceryDir: FileSystemDirectoryHandle
+  rufasDir: FileSystemDirectoryHandle
 ): Promise<WatchState> {
-  const stateDir = await sourceryDir.getDirectoryHandle('state')
+  const stateDir = await rufasDir.getDirectoryHandle('state')
   const handle = await stateDir.getFileHandle('file-status.json')
   const file = await handle.getFile()
   const content = await file.text()
@@ -12,10 +12,10 @@ export async function loadState(
 }
 
 export async function saveState(
-  sourceryDir: FileSystemDirectoryHandle,
+  rufasDir: FileSystemDirectoryHandle,
   state: WatchState
 ) {
-  const stateDir = await sourceryDir.getDirectoryHandle('state')
+  const stateDir = await rufasDir.getDirectoryHandle('state')
   const handle = await stateDir.getFileHandle('file-status.json', {
     create: true,
   })
@@ -41,7 +41,7 @@ export function generateBundleId(): string {
 
 export async function createBundleFile(
   files: WatchedFile[],
-  sourceryDir: FileSystemDirectoryHandle
+  rufasDir: FileSystemDirectoryHandle
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {
   try {
     const bundleId = generateBundleId()
@@ -56,7 +56,7 @@ export async function createBundleFile(
       .join('\n\n')
 
     // Save bundle file
-    const bundlesDir = await sourceryDir.getDirectoryHandle('bundles')
+    const bundlesDir = await rufasDir.getDirectoryHandle('bundles')
     const bundleHandle = await bundlesDir.getFileHandle(`${bundleId}.txt`, {
       create: true,
     })
@@ -65,7 +65,7 @@ export async function createBundleFile(
     await writable.close()
 
     // Update state
-    const state = await loadState(sourceryDir)
+    const state = await loadState(rufasDir)
     files.forEach((file) => {
       state.files[file.path] = {
         lastBundled: bundleId,
@@ -74,7 +74,7 @@ export async function createBundleFile(
       }
     })
 
-    await saveState(sourceryDir, state)
+    await saveState(rufasDir, state)
 
     return { success: true, bundleId }
   } catch (error) {

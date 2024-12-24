@@ -15,7 +15,7 @@ type MasterBundleStatus = {
 export function MasterBundlePanel() {
   const {
     watchedFiles,
-    sourceryDir,
+    rufasDir,
     isWatching,
     createMasterBundle
   } = useDirectoryWatcher();
@@ -24,10 +24,10 @@ export function MasterBundlePanel() {
   const [isCreating, setIsCreating] = useState(false);
 
   const loadMasterBundleStatus = async () => {
-    if (!sourceryDir) return;
+    if (!rufasDir) return;
 
     try {
-      const bundlesDir = await sourceryDir.getDirectoryHandle('bundles');
+      const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
       const masterDir = await bundlesDir.getDirectoryHandle('master');
 
       // Look for the latest master bundle manifest

@@ -27,7 +27,7 @@ export type DirectoryWatcherContextType = {
   loadBundles: () => Promise<void>;
   currentDirectory: string | null;
   createMasterBundle: () => Promise<void>;
-  sourceryDir: FileSystemDirectoryHandle | null;
+  rufasDir: FileSystemDirectoryHandle | null;
   tags: TagsConfig;
   addTag: (name: string, color: string, description: string) => void;
   deleteTag: (name: string) => void;
@@ -46,7 +46,7 @@ export const DirectoryWatcherContext = createContext<DirectoryWatcherContextType
   loadBundles: async () => { },
   currentDirectory: null,
   createMasterBundle: async () => { },
-  sourceryDir: null,
+  rufasDir: null,
   tags: {},
   addTag: () => { },
   deleteTag: () => { },

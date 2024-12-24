@@ -6,11 +6,8 @@ export function shouldIgnorePath(
 ): boolean {
   const normalizedPath = path.toLowerCase().replace(/\\/g, '/')
 
-  // Always ignore .sourcery directory
-  if (
-    normalizedPath === '.sourcery' ||
-    normalizedPath.startsWith('.sourcery/')
-  ) {
+  // Always ignore .rufas directory
+  if (normalizedPath === '.rufas' || normalizedPath.startsWith('.rufas/')) {
     return true
   }
 

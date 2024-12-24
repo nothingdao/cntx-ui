@@ -1,4 +1,6 @@
-# Sourcery
+# Resource Unification Format for AI Systems
+
+rufas
 
 A web application for tracking and bundling local file changes in a manner that will be best for AI to consume.
 
@@ -16,7 +18,7 @@ A web application for tracking and bundling local file changes in a manner that 
 
 ```bash
 git clone <repository-url>
-cd sourcery
+cd rufas
 ```
 
 2. Install dependencies
@@ -96,7 +98,7 @@ The contents of the .watch directory should reflect our requriements to track th
 1. Project Initialization & Context
 
 ```
-.sourcery/
+.rufas/
   config/
     bundle-ignore.ts      # Like .gitignore but for bundles
     tags.ts         # User-defined file groupings/tags
@@ -115,11 +117,11 @@ The contents of the .watch directory should reflect our requriements to track th
 
   - First-time setup wizard
   - Bundle ignore patterns: defaults we have defined in the default config should be applied. User can add more manually. We are not building a UI for this.
-  - Initial full project bundle: We need to bundle the entire project initially. This should inlude all files that are not being ignored. It should go in the `.sourcery/bundles/initial` directory. It should be created when the user first sets up the project using the `InitializationModal.tsx`.
+  - Initial full project bundle: We need to bundle the entire project initially. This should inlude all files that are not being ignored. It should go in the `.rufas/bundles/initial` directory. It should be created when the user first sets up the project using the `InitializationModal.tsx`.
 
 - File Tracking
 
-  - Changes since last bundle: We need to track changes to files since the last bundle. This should be stored in the `.sourcery/state/file-status.json` file. This file should be updated whenever a file is modified.
+  - Changes since last bundle: We need to track changes to files since the last bundle. This should be stored in the `.rufas/state/file-status.json` file. This file should be updated whenever a file is modified.
   - Tag assignments
   - File metadata (bundled state, sent state)...
 

@@ -15,7 +15,7 @@ import { TagsConfig } from '@/types/tags';
 export function DirectoryWatcherProvider({ children }: { children: ReactNode }) {
   const [watchedFiles, setWatchedFiles] = useState<WatchedFile[]>([]);
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
-  const [sourceryDir, setSourceryDir] = useState<FileSystemDirectoryHandle | null>(null);
+  const [rufasDir, setSourceryDir] = useState<FileSystemDirectoryHandle | null>(null);
   const [isWatching, setIsWatching] = useState(false);
   const [showInitModal, setShowInitModal] = useState(false);
   const [ignorePatterns, setIgnorePatterns] = useState<string[]>([]);
@@ -25,18 +25,18 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
 
 
   useEffect(() => {
-    if (sourceryDir) {
-      loadTagsConfig(sourceryDir)
+    if (rufasDir) {
+      loadTagsConfig(rufasDir)
         .then((loadedTags) => {
           setTags(loadedTags);
         })
         .catch(console.error);
     }
-  }, [sourceryDir]);
+  }, [rufasDir]);
 
 
   const addTag = async (name: string, color: string, description: string) => {
-    if (!sourceryDir) return;
+    if (!rufasDir) return;
 
     setTags((prevTags) => {
       // Create new tags object preserving all existing tags
@@ -47,24 +47,24 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
           description
         },
       };
-      saveTagsConfig(sourceryDir!, newTags).catch(console.error);
+      saveTagsConfig(rufasDir!, newTags).catch(console.error);
       return newTags;
     });
   };
 
   const deleteTag = async (name: string) => {
-    if (!sourceryDir) return;
+    if (!rufasDir) return;
 
     setTags((prevTags) => {
       const newTags = { ...prevTags };
       delete newTags[name];
-      saveTagsConfig(sourceryDir!, newTags).catch(console.error);
+      saveTagsConfig(rufasDir!, newTags).catch(console.error);
       return newTags;
     });
   };
 
   const updateTag = async (name: string, color: string, description: string) => {
-    if (!sourceryDir) return;
+    if (!rufasDir) return;
 
     setTags((prevTags) => {
       const newTags = {
@@ -74,16 +74,16 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
           description
         },
       };
-      saveTagsConfig(sourceryDir!, newTags).catch(console.error);
+      saveTagsConfig(rufasDir!, newTags).catch(console.error);
       return newTags;
     });
   };
 
   const loadBundles = useCallback(async () => {
-    if (!sourceryDir) return;
+    if (!rufasDir) return;
 
     try {
-      const bundlesDir = await sourceryDir.getDirectoryHandle('bundles');
+      const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
       const bundles: Bundle[] = [];
 
       for await (const entry of bundlesDir.values()) {
@@ -104,7 +104,7 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     } catch (error) {
       console.error('Error loading bundles:', error);
     }
-  }, [sourceryDir]);
+  }, [rufasDir]);
 
   const updateFile = useCallback(async (handle: FileSystemFileHandle, relativePath: string) => {
     try {
@@ -166,7 +166,7 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     if (!directoryHandle) return;
 
     try {
-      const { sourceryDir: newSourceryDir } = await initializeProject(directoryHandle);
+      const { rufasDir: newSourceryDir } = await initializeProject(directoryHandle);
       const patterns = await loadBundleIgnore(newSourceryDir);
       setSourceryDir(newSourceryDir);
       setIgnorePatterns(patterns);
@@ -194,7 +194,7 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
 
       try {
         // Check if project is already initialized
-        const existingSourceryDir = await dirHandle.getDirectoryHandle('.sourcery');
+        const existingSourceryDir = await dirHandle.getDirectoryHandle('.rufas');
         const patterns = await loadBundleIgnore(existingSourceryDir);
 
         // Load existing project
@@ -249,13 +249,13 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
   }, [watchedFiles]);
 
   const createBundle = async (): Promise<string> => {
-    if (!sourceryDir) return '';
+    if (!rufasDir) return '';
 
     const stagedFiles = watchedFiles.filter(file => file.isStaged);
     if (stagedFiles.length === 0) return '';
 
     try {
-      const result = await createBundleFile(stagedFiles, sourceryDir);
+      const result = await createBundleFile(stagedFiles, rufasDir);
 
       if (result.success) {
         // Update watched files to reflect new bundle state
@@ -293,7 +293,7 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
   }, [directoryHandle, ignorePatterns, isWatching, processDirectory]);
 
   useEffect(() => {
-    if (sourceryDir && isWatching) {
+    if (rufasDir && isWatching) {
       const state: WatchState = {
         lastAccessed: new Date().toISOString(),
         files: watchedFiles.reduce((acc, file) => ({
@@ -305,13 +305,13 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
         }), {}),
         tags: {},
       };
-      saveState(sourceryDir, state).catch(console.error);
+      saveState(rufasDir, state).catch(console.error);
     }
-  }, [watchedFiles, sourceryDir, isWatching]);
+  }, [watchedFiles, rufasDir, isWatching]);
 
   const createMasterBundleWrapper = async () => {
-    if (!sourceryDir) return;
-    await createMasterBundle(watchedFiles, sourceryDir);
+    if (!rufasDir) return;
+    await createMasterBundle(watchedFiles, rufasDir);
   };
 
   return (
@@ -330,7 +330,7 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
         tags,
         addTag,
         createMasterBundle: createMasterBundleWrapper,
-        sourceryDir,
+        rufasDir,
         deleteTag,
         updateTag
       }}
