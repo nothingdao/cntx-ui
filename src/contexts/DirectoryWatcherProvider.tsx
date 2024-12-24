@@ -6,7 +6,7 @@ import type { Bundle } from '../types/bundle';
 import { getPathParts } from '../utils/file-utils';
 import { shouldIgnorePath } from '../utils/config-utils';
 import { createMasterBundle, initializeProject, loadBundleIgnore, loadTagsConfig, saveTagsConfig } from '../utils/project-utils';
-import { saveState, loadState, createBundle } from '../utils/file-state';
+import { saveState, loadState, createBundleFile } from '../utils/file-state';
 import type { WatchState } from '../types/watcher';
 import { InitializationModal } from '../components/InitializationModal';
 import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem';
@@ -35,11 +35,44 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
   }, [sourceryDir]);
 
 
-  const addTag = async (tagName: string) => {
+  const addTag = async (name: string, color: string, description: string) => {
+    if (!sourceryDir) return;
+
+    setTags((prevTags) => {
+      // Create new tags object preserving all existing tags
+      const newTags = {
+        ...prevTags,
+        [name]: {
+          color,
+          description
+        },
+      };
+      saveTagsConfig(sourceryDir!, newTags).catch(console.error);
+      return newTags;
+    });
+  };
+
+  const deleteTag = async (name: string) => {
+    if (!sourceryDir) return;
+
+    setTags((prevTags) => {
+      const newTags = { ...prevTags };
+      delete newTags[name];
+      saveTagsConfig(sourceryDir!, newTags).catch(console.error);
+      return newTags;
+    });
+  };
+
+  const updateTag = async (name: string, color: string, description: string) => {
+    if (!sourceryDir) return;
+
     setTags((prevTags) => {
       const newTags = {
         ...prevTags,
-        [tagName]: {},
+        [name]: {
+          color,
+          description
+        },
       };
       saveTagsConfig(sourceryDir!, newTags).catch(console.error);
       return newTags;
@@ -171,6 +204,10 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
         setIsWatching(true);
         setCurrentDirectory(dirHandle.name);
 
+        // Load tags config - ADDED THIS EXPLICIT CALL
+        const existingTags = await loadTagsConfig(existingSourceryDir);
+        setTags(existingTags);
+
         // Load existing state
         const state = await loadState(existingSourceryDir);
         if (state) {
@@ -180,7 +217,7 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
             isStaged: state.files[file.path]?.isStaged || false,
             lastBundled: state.files[file.path]?.bundleTimestamp
               ? new Date(state.files[file.path].bundleTimestamp)
-              : null, // Use null if bundleTimestamp is undefined
+              : null,
           })));
         }
       } catch {
@@ -211,14 +248,14 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     ));
   }, [watchedFiles]);
 
-  const createNewBundle = async (): Promise<string> => {
+  const createBundle = async (): Promise<string> => {
     if (!sourceryDir) return '';
 
     const stagedFiles = watchedFiles.filter(file => file.isStaged);
     if (stagedFiles.length === 0) return '';
 
     try {
-      const result = await createBundle(stagedFiles, sourceryDir);
+      const result = await createBundleFile(stagedFiles, sourceryDir);
 
       if (result.success) {
         // Update watched files to reflect new bundle state
@@ -285,15 +322,17 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
         selectDirectory,
         refreshFiles,
         isWatching,
-        createBundle: createNewBundle,
+        createBundle,
         toggleStaged,
         currentDirectory,
         bundles,
         loadBundles,
         tags,
         addTag,
-        createMasterBundle: createMasterBundleWrapper, // Use the wrapper function
-        sourceryDir, // Add this property
+        createMasterBundle: createMasterBundleWrapper,
+        sourceryDir,
+        deleteTag,
+        updateTag
       }}
     >
       {children}

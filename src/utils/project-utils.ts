@@ -1,5 +1,5 @@
 // src/utils/project-utils.ts
-import { DEFAULT_BUNDLE_IGNORE } from '../constants'
+import { DEFAULT_BUNDLE_IGNORE, DEFAULT_TAGS } from '../constants'
 import type { WatchedFile, WatchState } from '../types/watcher'
 import type { FileSystemDirectoryHandle } from '../types/filesystem'
 import { TagsConfig } from '@/types/tags'
@@ -58,10 +58,9 @@ export default ${JSON.stringify(DEFAULT_BUNDLE_IGNORE, null, 2)} as const;
   await writable.write(content)
   await writable.close()
 
-  // Create tags.ts
-  const initialTags: TagsConfig = {}
+  // Create tags.ts with default tags
   const tagsContent = `// .sourcery/config/tags.ts
-export default ${JSON.stringify(initialTags, null, 2)} as const;
+export default ${JSON.stringify(DEFAULT_TAGS, null, 2)} as const;
 `
   const tagsHandle = await configDir.getFileHandle('tags.ts', { create: true })
   const tagsWritable = await tagsHandle.createWritable()
@@ -190,9 +189,13 @@ export async function saveTagsConfig(
       create: true,
     })
     const writable = await tagsHandle.createWritable()
-    await writable.write(
-      `export default ${JSON.stringify(tags, null, 2)} as const;`
-    )
+
+    // Preserve the export default format
+    const content = `// .sourcery/config/tags.ts
+export default ${JSON.stringify(tags, null, 2)} as const;
+`
+
+    await writable.write(content)
     await writable.close()
   } catch (error) {
     console.error('Error saving tags config:', error)
@@ -207,13 +210,14 @@ export async function loadTagsConfig(
     const tagsHandle = await configDir.getFileHandle('tags.ts')
     const file = await tagsHandle.getFile()
     const content = await file.text()
-    const match = content.match(/export default ({[\s\S]*});/)
-    if (!match) {
-      console.log('No tags found, using empty object')
-      return {}
-    }
-    const tagsContent = match[1]
-    return JSON.parse(tagsContent)
+
+    // Extract the object part
+    const match = content.match(/default\s*({[\s\S]*})\s*as const/)
+    if (!match) return {}
+
+    // Clean and evaluate the content directly
+    const obj = eval('(' + match[1] + ')')
+    return obj
   } catch (error) {
     console.error('Error loading tags:', error)
     return {}

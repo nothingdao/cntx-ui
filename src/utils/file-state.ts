@@ -39,7 +39,7 @@ export function generateBundleId(): string {
   return `bundle-${timestamp}-${random}`
 }
 
-export async function createBundle(
+export async function createBundleFile(
   files: WatchedFile[],
   sourceryDir: FileSystemDirectoryHandle
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {

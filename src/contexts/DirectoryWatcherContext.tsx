@@ -29,7 +29,9 @@ export type DirectoryWatcherContextType = {
   createMasterBundle: () => Promise<void>;
   sourceryDir: FileSystemDirectoryHandle | null;
   tags: TagsConfig;
-  addTag: (tagName: string) => void;
+  addTag: (name: string, color: string, description: string) => void;
+  deleteTag: (name: string) => void;
+  updateTag: (name: string, color: string, description: string) => void;
 };
 
 export const DirectoryWatcherContext = createContext<DirectoryWatcherContextType>({
@@ -45,6 +47,8 @@ export const DirectoryWatcherContext = createContext<DirectoryWatcherContextType
   currentDirectory: null,
   createMasterBundle: async () => { },
   sourceryDir: null,
-  tags: {}, // Use an empty object instead of an empty array
+  tags: {},
   addTag: () => { },
+  deleteTag: () => { },
+  updateTag: () => { },
 });

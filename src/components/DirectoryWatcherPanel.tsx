@@ -131,13 +131,6 @@ export function DirectoryWatcherPanel() {
         </TabsContent>
         <TabsContent value="tags">
           <TagsPanel />
-          <ScrollArea className="flex-1">
-            <div className="">
-              <div className="text-center py-8 text-gray-500">
-                No tags yet
-              </div>
-            </div>
-          </ScrollArea>
         </TabsContent>
       </Tabs>
 

@@ -1,16 +1,16 @@
 {
-  "lastAccessed": "2024-12-24T09:33:10.131Z",
+  "lastAccessed": "2024-12-24T10:58:12.284Z",
   "files": {
     "tsconfig.node.json": {
-      "lastBundled": "2024-12-24T09:30:01.679Z",
+      "lastBundled": null,
       "isStaged": false
     },
     "index.html": {
-      "lastBundled": "2024-12-24T09:30:01.679Z",
+      "lastBundled": null,
       "isStaged": false
     },
     "tailwind.config.js": {
-      "lastBundled": "2024-12-24T09:30:01.679Z",
+      "lastBundled": null,
       "isStaged": false
     },
     "tsconfig.app.json": {
@@ -49,81 +49,89 @@
       "lastBundled": null,
       "isStaged": false
     },
+    "PROMPTS.md": {
+      "lastBundled": null,
+      "isStaged": false
+    },
     "postcss.config.js": {
       "lastBundled": null,
       "isStaged": false
     },
     "src/App.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/main.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/types/watcher.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/types/filesystem.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/types/tags.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/types/watch-config.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/types/bundle.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/contexts/DirectoryWatcherProvider.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/contexts/DirectoryWatcherContext.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/constants/index.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/App.css": {
-      "lastBundled": "2024-12-24T09:30:01.679Z",
+      "lastBundled": null,
       "isStaged": false
     },
     "src/utils/project-utils.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/utils/config-utils.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/utils/file-state.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/utils/file-utils.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/utils/scan-utils.ts": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/index.css": {
-      "lastBundled": "2024-12-24T09:30:01.679Z",
+      "lastBundled": null,
       "isStaged": false
     },
     "src/components/theme-provider.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.078Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
+    },
+    "src/components/ui/alert-dialog.tsx": {
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/ui/tabs.tsx": {
       "lastBundled": null,
@@ -142,6 +150,10 @@
       "isStaged": false
     },
     "src/components/ui/dialog.tsx": {
+      "lastBundled": null,
+      "isStaged": false
+    },
+    "src/components/ui/badge.tsx": {
       "lastBundled": null,
       "isStaged": false
     },
@@ -166,60 +178,56 @@
       "isStaged": false
     },
     "src/components/BundlesList.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/DirectoryWatcherPanel.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/DirectoryTree.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/MasterBundlePanel.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/FileRow.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/claudeChat.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/ApplicationContainer.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/mode-toggle.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/TagsPanel.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/components/InitializationModal.tsx": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/vite-env.d.ts": {
-      "lastBundled": "2024-12-24T09:30:01.679Z",
+      "lastBundled": null,
       "isStaged": false
     },
     "src/hooks/useDirectoryWatcher.ts": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     },
     "src/lib/utils.ts": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
-    },
-    "src/services/claude.ts": {
-      "lastBundled": "2024-12-24T09:33:10.079Z",
-      "isStaged": true
+      "lastBundled": null,
+      "isStaged": false
     }
   },
   "tags": {}
