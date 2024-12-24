@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { useMutation } from "@tanstack/react-query";
 import { sendMessage, type ClaudeModel } from '../services/claude';
-import { useFileWatcher } from '../hooks/useFileWatcher';
+import { useDirectoryWatcher } from '../hooks/useDirectoryWatcher';
 import { useState } from "react";
 
 const MODELS: { value: ClaudeModel; label: string }[] = [
@@ -21,7 +21,7 @@ export default function ClaudeChat() {
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState<ClaudeModel>('claude-3-opus-20240229');
 
-  const { watchedFiles } = useFileWatcher();
+  const { watchedFiles } = useDirectoryWatcher();
 
   const sendMessageMutation = useMutation({
     mutationFn: async (newMessage: string) => {

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileIcon, SquareDot } from 'lucide-react';
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import type { WatchedFile } from '../contexts/FileWatcherContext';
+import type { WatchedFile } from '@/contexts/DirectoryWatcherContext';
 import { getAllDirectories } from '../utils/file-utils';
 
 type DirectoryTreeProps = {

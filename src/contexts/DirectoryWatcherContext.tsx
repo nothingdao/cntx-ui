@@ -1,4 +1,4 @@
-// src/contexts/FileWatcherContext.tsx
+// src/contexts/DirectoryWatcherContext.tsx
 import { createContext } from 'react';
 import type { Bundle } from '../types/bundle';
 import { TagsConfig } from '@/types/tags';
@@ -15,7 +15,7 @@ export type WatchedFile = {
   handle?: FileSystemFileHandle;
 };
 
-export type FileWatcherContextType = {
+export type DirectoryWatcherContextType = {
   watchedFiles: WatchedFile[];
   stagedFiles: WatchedFile[];
   selectDirectory: () => Promise<void>;
@@ -32,7 +32,7 @@ export type FileWatcherContextType = {
   addTag: (tagName: string) => void;
 };
 
-export const FileWatcherContext = createContext<FileWatcherContextType>({
+export const DirectoryWatcherContext = createContext<DirectoryWatcherContextType>({
   watchedFiles: [],
   stagedFiles: [],
   selectDirectory: async () => { },

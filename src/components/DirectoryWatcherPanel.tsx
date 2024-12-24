@@ -1,5 +1,5 @@
-// src/components/FileWatcherPanel.tsx
-import { useFileWatcher } from '../hooks/useFileWatcher';
+// src/components/DirectoryWatcherPanel.tsx
+import { useDirectoryWatcher } from "@/hooks/useDirectoryWatcher";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Archive, Files, FolderOpen, Tags } from "lucide-react";
@@ -10,7 +10,7 @@ import { ModeToggle } from './mode-toggle';
 import { MasterBundlePanel } from './MasterBundlePanel';
 import { TagsPanel } from './TagsPanel';
 
-export function FileWatcherPanel() {
+export function DirectoryWatcherPanel() {
 
   const {
     watchedFiles,
@@ -21,7 +21,7 @@ export function FileWatcherPanel() {
     createBundle,
     toggleStaged,
     currentDirectory
-  } = useFileWatcher();
+  } = useDirectoryWatcher();
 
   const handleMakeBundle = async () => {
     if (stagedFiles.length === 0) {

@@ -1,7 +1,7 @@
 // src/components/MasterBundlePanel.tsx
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { useFileWatcher } from '../hooks/useFileWatcher';
+import { useDirectoryWatcher } from '../hooks/useDirectoryWatcher';
 import { HistoryIcon, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -18,7 +18,7 @@ export function MasterBundlePanel() {
     sourceryDir,
     isWatching,
     createMasterBundle
-  } = useFileWatcher();
+  } = useDirectoryWatcher();
 
   const [status, setStatus] = useState<MasterBundleStatus>({ exists: false });
   const [isCreating, setIsCreating] = useState(false);

@@ -1,3 +1,7 @@
 export default {
-  "test": {}
+  "hello": {},
+  "dude": {},
+  "how": {},
+  "are": {},
+  "you": {}
 } as const;

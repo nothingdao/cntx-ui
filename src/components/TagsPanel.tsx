@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useFileWatcher } from '../hooks/useFileWatcher';
+import { useDirectoryWatcher } from '@/hooks/useDirectoryWatcher';
 
 export function TagsPanel() {
   const [newTag, setNewTag] = useState('');
-  const { tags, addTag } = useFileWatcher();
+  const { tags, addTag } = useDirectoryWatcher();
 
   const handleAddTag = () => {
     if (newTag.trim()) {

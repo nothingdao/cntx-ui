@@ -13,7 +13,7 @@ export type WatchedFile = {
   handle?: FileSystemFileHandle
 }
 
-export type FileWatcherContextType = {
+export type DirectoryWatcherContextType = {
   watchedFiles: WatchedFile[]
   stagedFiles: WatchedFile[]
   selectDirectory: () => Promise<void>

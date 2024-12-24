@@ -1,12 +1,12 @@
 // src/components/Chat/ApplicationContainer.tsx
-import { FileWatcherPanel } from './FileWatcherPanel';
+import { DirectoryWatcherPanel } from "@/components/DirectoryWatcherPanel";
 export const ApplicationContainer = () => {
 
   return (
     <div className="grid grid-cols-[300px,1fr,400px] h-screen mx-auto gap-4">
       {/* Menu Column */}
       <div className="p-4 border-r">
-        <FileWatcherPanel />
+        <DirectoryWatcherPanel />
       </div>
 
       {/* Main Column

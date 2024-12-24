@@ -74,10 +74,10 @@ npm run dev
 
 ### Key Components
 
-- `FileWatcherPanel`: UI for file monitoring and staging
+- `DirectoryWatcherPanel`: UI for file monitoring and staging
 - `ApplicationContainer`: Main application container
-- `FileWatcherProvider`: Context provider for file state management
-- `FileWatcherContext`: Context for sharing file state
+- `DirectoryWatcherProvider`: Context provider for file state management
+- `DirectoryWatcherContext`: Context for sharing file state
 
 ### File States
 

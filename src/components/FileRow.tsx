@@ -1,7 +1,7 @@
 // src/components/FileRow.tsx
 import { File, Clock, AlertCircle, History } from "lucide-react";
 import { Checkbox } from "./ui/checkbox";
-import type { WatchedFile } from '../contexts/FileWatcherContext';
+import type { WatchedFile } from '../contexts/DirectoryWatcherContext';
 
 type FileRowProps = {
   file: WatchedFile;

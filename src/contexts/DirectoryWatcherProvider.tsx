@@ -1,6 +1,6 @@
-// src/contexts/FileWatcherProvider.tsx
+// src/contexts/DirectoryWatcherProvider.tsx
 import { type ReactNode, useState, useEffect, useCallback, useMemo } from 'react';
-import { FileWatcherContext } from './FileWatcherContext';
+import { DirectoryWatcherContext } from './DirectoryWatcherContext';
 import type { WatchedFile } from '../types/watcher';
 import type { Bundle } from '../types/bundle';
 import { getPathParts } from '../utils/file-utils';
@@ -12,7 +12,7 @@ import { InitializationModal } from '../components/InitializationModal';
 import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem';
 import { TagsConfig } from '@/types/tags';
 
-export function FileWatcherProvider({ children }: { children: ReactNode }) {
+export function DirectoryWatcherProvider({ children }: { children: ReactNode }) {
   const [watchedFiles, setWatchedFiles] = useState<WatchedFile[]>([]);
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [sourceryDir, setSourceryDir] = useState<FileSystemDirectoryHandle | null>(null);
@@ -278,7 +278,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <FileWatcherContext.Provider
+    <DirectoryWatcherContext.Provider
       value={{
         watchedFiles,
         stagedFiles,
@@ -304,6 +304,6 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
         processDirectory={processDirectory}
         setIgnorePatterns={setIgnorePatterns}
       />
-    </FileWatcherContext.Provider>
+    </DirectoryWatcherContext.Provider>
   );
 }
