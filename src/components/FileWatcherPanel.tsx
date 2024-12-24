@@ -6,6 +6,9 @@ import { Archive, Files, FolderOpen, Tags } from "lucide-react";
 import { DirectoryTree } from './DirectoryTree';
 import { BundlesList } from './BundlesList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ModeToggle } from './mode-toggle';
+import { MasterBundlePanel } from './MasterBundlePanel';
+import { TagsPanel } from './TagsPanel';
 
 export function FileWatcherPanel() {
 
@@ -35,10 +38,17 @@ export function FileWatcherPanel() {
     console.log('Bundle created successfully');
   };
 
+  const handleClearStaged = () => {
+    // Toggle all currently staged files to unstage them
+    if (stagedFiles.length > 0) {
+      toggleStaged(stagedFiles.map(f => f.path));
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
-      <div className="pb-4">
 
+      <div className="flex space-x-2">
         <Button
           onClick={() => selectDirectory()}
           variant={isWatching ? "outline" : "default"}
@@ -46,30 +56,35 @@ export function FileWatcherPanel() {
           <FolderOpen />
           {currentDirectory || 'Select Directory'}
         </Button>
-
-        <p className="text-sm text-gray-500 mt-1">
-          {isWatching ? 'Watching for changes...' : 'Select a directory to start watching'}
-        </p>
-
+        <ModeToggle />
       </div>
 
-      <Tabs defaultValue="files">
-        <TabsList>
-          <TabsTrigger value="files">
-            <Files className="h-5 w-5 pr-2" />
-            Files</TabsTrigger>
-          <TabsTrigger value="bundles">
-            <Archive className="h-5 w-5 pr-2" />
-            Bundles
-          </TabsTrigger>
-          <TabsTrigger value="tags">
-            <Tags className="h-5 w-5 pr-2" />
-            Tags
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="files">
+      <div className="text-xs text-gray-500 pl-2 pt-1 pb-4">
+        {isWatching ? 'Watching for changes...' : 'Select a directory to start watching'}
+      </div>
 
-          <div className="flex items-center justify-between py-4 gap-2">
+
+      <Tabs defaultValue="files">
+
+
+        <div className="pb-4">
+          <TabsList className='flex space-x-2'>
+            <TabsTrigger value="files">
+              <Files className="h-5 w-5 pr-2" />
+              Files</TabsTrigger>
+            <TabsTrigger value="bundles">
+              <Archive className="h-5 w-5 pr-2" />
+              Bundles
+            </TabsTrigger>
+            <TabsTrigger value="tags">
+              <Tags className="h-5 w-5 pr-2" />
+              Tags
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="files">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {isWatching && (
                 <>
@@ -80,6 +95,14 @@ export function FileWatcherPanel() {
                     disabled={stagedFiles.length === 0}
                   >
                     Bundle ({stagedFiles.length})
+                  </Button>
+                  <Button
+                    onClick={handleClearStaged}
+                    variant="outline"
+                    size="sm"
+                    disabled={stagedFiles.length === 0}
+                  >
+                    Clear Selection
                   </Button>
                 </>
               )}
@@ -99,6 +122,7 @@ export function FileWatcherPanel() {
 
         </TabsContent>
         <TabsContent value="bundles">
+          <MasterBundlePanel />
           <ScrollArea className="flex-1">
             <div className="">
               <BundlesList bundles={bundles} />
@@ -106,6 +130,7 @@ export function FileWatcherPanel() {
           </ScrollArea>
         </TabsContent>
         <TabsContent value="tags">
+          <TagsPanel />
           <ScrollArea className="flex-1">
             <div className="">
               <div className="text-center py-8 text-gray-500">

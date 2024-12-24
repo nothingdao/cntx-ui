@@ -12,7 +12,7 @@ export function FileRow({ file, onToggleStage }: FileRowProps) {
   const hasChangedSinceLastBundle = file.lastBundled && file.lastModified > file.lastBundled;
 
   return (
-    <div className={`p-2 rounded-md ${file.isChanged ? 'bg-yellow-50' : 'bg-white'} flex items-center space-x-3 hover:bg-gray-50 transition-colors`}>
+    <div className={`p-2 rounded-md ${file.isChanged ? 'bg-yellow-50' : 'bg-white'} flex items-center space-x-3  transition-colors`}>
       <Checkbox
         checked={file.isStaged}
         onCheckedChange={onToggleStage}

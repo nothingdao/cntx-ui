@@ -1,6 +1,7 @@
 // src/contexts/FileWatcherContext.tsx
 import { createContext } from 'react';
 import type { Bundle } from '../types/bundle';
+import { TagsConfig } from '@/types/tags';
 
 export type WatchedFile = {
   path: string;
@@ -21,10 +22,14 @@ export type FileWatcherContextType = {
   refreshFiles: () => Promise<void>;
   isWatching: boolean;
   createBundle: () => Promise<string>;
-  toggleStaged: (path: string) => void;
+  toggleStaged: (paths: string[]) => void;
   bundles: Bundle[];
   loadBundles: () => Promise<void>;
   currentDirectory: string | null;
+  createMasterBundle: () => Promise<void>;
+  sourceryDir: FileSystemDirectoryHandle | null;
+  tags: TagsConfig;
+  addTag: (tagName: string) => void;
 };
 
 export const FileWatcherContext = createContext<FileWatcherContextType>({
@@ -38,4 +43,8 @@ export const FileWatcherContext = createContext<FileWatcherContextType>({
   bundles: [],
   loadBundles: async () => { },
   currentDirectory: null,
+  createMasterBundle: async () => { },
+  sourceryDir: null,
+  tags: {}, // Use an empty object instead of an empty array
+  addTag: () => { },
 });

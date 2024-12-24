@@ -1,5 +1,4 @@
-// src/components/DirectoryTree.tsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileIcon, SquareDot } from 'lucide-react';
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -8,30 +7,35 @@ import { getAllDirectories } from '../utils/file-utils';
 
 type DirectoryTreeProps = {
   files: WatchedFile[];
-  onToggleStage: (path: string) => void;
+  onToggleStage: (paths: string[]) => void;
 };
 
-function getDirectoryFiles(dir: string, files: WatchedFile[]): WatchedFile[] {
-  return files.filter(f => f.directory === dir);
-}
+type TreeItem = JSX.Element;
 
-function getDirectoryLabel(dir: string): string {
-  return dir.split('/').pop() || dir;
-}
-
-function FileRow({ file, onToggleStage }: { file: WatchedFile; onToggleStage: () => void }) {
+function FileRow({
+  file,
+  onCheckboxClick,
+  depth = 0
+}: {
+  file: WatchedFile;
+  onCheckboxClick: (event: React.MouseEvent) => void;
+  depth?: number;
+}) {
   return (
-    <div className="flex items-center space-x-2 py-1 px-2 hover:bg-gray-50 rounded">
+    <div className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded-md"
+      style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
       <Checkbox
         checked={file.isStaged}
-        onCheckedChange={onToggleStage}
+        onCheckedChange={() => { }} // Handled by onClick
+        onClick={onCheckboxClick}
+        className="cursor-pointer"
       />
-      <FileIcon className="h-4 w-4 text-gray-500" />
+      <FileIcon className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1 truncate text-sm">
         {file.name}
       </span>
       {file.isChanged && (
-        <SquareDot size={16} strokeWidth={0.5} />
+        <SquareDot size={16} className="text-primary" />
       )}
     </div>
   );
@@ -39,13 +43,12 @@ function FileRow({ file, onToggleStage }: { file: WatchedFile; onToggleStage: ()
 
 export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(['Root']));
+  const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
+  const visibleFilesRef = useRef<string[]>([]);
 
   // Get all directories except Root
   const directories = getAllDirectories(files.map(f => f.path))
     .filter(dir => dir !== 'Root');
-
-  // Get files that are directly in the root (no directory)
-  const rootFiles = files.filter(f => f.directory === 'Root');
 
   const toggleDirectory = (dir: string) => {
     const newExpanded = new Set(expandedDirs);
@@ -57,65 +60,99 @@ export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
     setExpandedDirs(newExpanded);
   };
 
-  return (
-    <div className="space-y-1">
-      {/* Render root files first */}
-      {rootFiles.map(file => (
+  const handleCheckboxClick = (path: string, event: React.MouseEvent) => {
+    if (event.shiftKey && lastSelectedPath) {
+      const currentIndex = visibleFilesRef.current.indexOf(path);
+      const lastIndex = visibleFilesRef.current.indexOf(lastSelectedPath);
+
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        const pathsToToggle = visibleFilesRef.current.slice(start, end + 1);
+
+        onToggleStage(pathsToToggle);
+      }
+    } else {
+      onToggleStage([path]);
+    }
+
+    setLastSelectedPath(path);
+  };
+
+  const renderTreeItems = (parentDir: string = 'Root', depth: number = 0): TreeItem[] => {
+    const allItems: TreeItem[] = [];
+
+    if (parentDir === 'Root') {
+      visibleFilesRef.current = [];
+    }
+
+    // Get and render directories first
+    const childDirs = directories.filter((dir: string) => {
+      const parts = dir.split('/');
+      const parentParts = parentDir === 'Root' ? [] : parentDir.split('/');
+      return parts.length === parentParts.length + 1 &&
+        dir.startsWith(parentDir === 'Root' ? '' : parentDir + '/');
+    });
+
+    // Add directories
+    childDirs.forEach((dir) => {
+      const dirName = dir.split('/').pop() || dir;
+      const filesInDir = files.filter(f => f.directory === dir);
+      const isExpanded = expandedDirs.has(dir);
+
+      allItems.push(
+        <div key={dir}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start px-2 py-1 h-8"
+            onClick={() => toggleDirectory(dir)}
+            style={{ paddingLeft: `${depth * 12}px` }}
+          >
+            <span className="flex items-center space-x-2">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              {isExpanded ? (
+                <FolderOpen className="h-4 w-4 text-zinc-500" />
+              ) : (
+                <Folder className="h-4 w-4 text-zinc-500" />
+              )}
+              <span className="text-sm">{dirName}</span>
+              <span className="text-xs text-muted-foreground">
+                ({filesInDir.length})
+              </span>
+            </span>
+          </Button>
+          {isExpanded && renderTreeItems(dir, depth + 1)}
+        </div>
+      );
+    });
+
+    // Then add files
+    const dirFiles = files.filter(f => f.directory === parentDir);
+    dirFiles.forEach((file) => {
+      visibleFilesRef.current.push(file.path);
+      allItems.push(
         <FileRow
           key={file.path}
           file={file}
-          onToggleStage={() => onToggleStage(file.path)}
+          onCheckboxClick={(event) => handleCheckboxClick(file.path, event)}
+          depth={depth}
         />
-      ))}
+      );
+    });
 
-      {/* Then render the directory tree */}
-      {directories.map(dir => {
-        const isExpanded = expandedDirs.has(dir);
-        const dirFiles = getDirectoryFiles(dir, files);
-        const displayName = getDirectoryLabel(dir);
+    return allItems;
+  };
 
-        if (dirFiles.length === 0) return null;
-
-        const indent = dir.split('/').length - 1;
-
-        return (
-          <div key={dir} className="space-y-0.5" style={{ marginLeft: `${indent * 12}px` }}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start px-2 py-1 h-8"
-              onClick={() => toggleDirectory(dir)}
-            >
-              <span className="flex items-center space-x-2">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                {isExpanded ? (
-                  <FolderOpen className="h-4 w-4 text-blue-500" />
-                ) : (
-                  <Folder className="h-4 w-4 text-blue-500" />
-                )}
-                <span className="text-sm">{displayName}</span>
-                <span className="text-xs text-gray-500">({dirFiles.length})</span>
-              </span>
-            </Button>
-
-            {isExpanded && (
-              <div className="ml-6">
-                {dirFiles.map(file => (
-                  <FileRow
-                    key={file.path}
-                    file={file}
-                    onToggleStage={() => onToggleStage(file.path)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+  return (
+    <div className="space-y-2">
+      <div className="space-y-0.5">
+        {renderTreeItems()}
+      </div>
     </div>
   );
 }

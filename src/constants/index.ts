@@ -33,6 +33,7 @@ export const DEFAULT_BUNDLE_IGNORE = [
   '*.webp',
   '*.svg',
   '*.ico',
+  '*.pxd',
 
   // Documents and archives
   '*.pdf',

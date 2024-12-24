@@ -5,11 +5,12 @@ import type { WatchedFile } from '../types/watcher';
 import type { Bundle } from '../types/bundle';
 import { getPathParts } from '../utils/file-utils';
 import { shouldIgnorePath } from '../utils/config-utils';
-import { initializeProject, loadBundleIgnore } from '../utils/project-utils';
+import { createMasterBundle, initializeProject, loadBundleIgnore, loadTagsConfig, saveTagsConfig } from '../utils/project-utils';
 import { saveState, loadState, createBundle } from '../utils/file-state';
 import type { WatchState } from '../types/watcher';
 import { InitializationModal } from '../components/InitializationModal';
 import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem';
+import { TagsConfig } from '@/types/tags';
 
 export function FileWatcherProvider({ children }: { children: ReactNode }) {
   const [watchedFiles, setWatchedFiles] = useState<WatchedFile[]>([]);
@@ -20,6 +21,30 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
   const [ignorePatterns, setIgnorePatterns] = useState<string[]>([]);
   const [currentDirectory, setCurrentDirectory] = useState<string | null>(null);
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [tags, setTags] = useState<TagsConfig>({});
+
+
+  useEffect(() => {
+    if (sourceryDir) {
+      loadTagsConfig(sourceryDir)
+        .then((loadedTags) => {
+          setTags(loadedTags);
+        })
+        .catch(console.error);
+    }
+  }, [sourceryDir]);
+
+
+  const addTag = async (tagName: string) => {
+    setTags((prevTags) => {
+      const newTags = {
+        ...prevTags,
+        [tagName]: {},
+      };
+      saveTagsConfig(sourceryDir!, newTags).catch(console.error);
+      return newTags;
+    });
+  };
 
   const loadBundles = useCallback(async () => {
     if (!sourceryDir) return;
@@ -115,6 +140,9 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
       setIsWatching(true);
       setShowInitModal(false);
       setCurrentDirectory(directoryHandle.name);
+
+      // Refresh files after initialization
+      await refreshFiles();
     } catch (error) {
       console.error('Error completing initialization:', error);
     }
@@ -152,7 +180,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
             isStaged: state.files[file.path]?.isStaged || false,
             lastBundled: state.files[file.path]?.bundleTimestamp
               ? new Date(state.files[file.path].bundleTimestamp)
-              : null
+              : null, // Use null if bundleTimestamp is undefined
           })));
         }
       } catch {
@@ -170,13 +198,18 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     await processDirectory(directoryHandle);
   }, [directoryHandle, processDirectory]);
 
-  const toggleStaged = (path: string) => {
+  const toggleStaged = useCallback((paths: string[]) => {
+    // Get the target state from the first path's current state
+    const firstFile = watchedFiles.find(f => f.path === paths[0]);
+    if (!firstFile) return;
+    const targetState = !firstFile.isStaged;
+
     setWatchedFiles(prev => prev.map(file =>
-      file.path === path
-        ? { ...file, isStaged: !file.isStaged }
+      paths.includes(file.path)
+        ? { ...file, isStaged: targetState }
         : file
     ));
-  };
+  }, [watchedFiles]);
 
   const createNewBundle = async (): Promise<string> => {
     if (!sourceryDir) return '';
@@ -232,11 +265,17 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
             lastBundled: file.lastBundled?.toISOString() || null,
             isStaged: file.isStaged
           }
-        }), {})
+        }), {}),
+        tags: {},
       };
       saveState(sourceryDir, state).catch(console.error);
     }
   }, [watchedFiles, sourceryDir, isWatching]);
+
+  const createMasterBundleWrapper = async () => {
+    if (!sourceryDir) return;
+    await createMasterBundle(watchedFiles, sourceryDir);
+  };
 
   return (
     <FileWatcherContext.Provider
@@ -250,7 +289,11 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
         toggleStaged,
         currentDirectory,
         bundles,
-        loadBundles
+        loadBundles,
+        tags,
+        addTag,
+        createMasterBundle: createMasterBundleWrapper, // Use the wrapper function
+        sourceryDir, // Add this property
       }}
     >
       {children}
@@ -258,8 +301,8 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
         isOpen={showInitModal}
         onComplete={handleInitComplete}
         dirHandle={directoryHandle!}
-        watchedFiles={watchedFiles}
-        refreshFiles={refreshFiles}
+        processDirectory={processDirectory}
+        setIgnorePatterns={setIgnorePatterns}
       />
     </FileWatcherContext.Provider>
   );

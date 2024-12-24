@@ -35,6 +35,9 @@ export type WatchState = {
       bundleTimestamp?: string
     }
   }
+  tags: {
+    [tagName: string]: string[]
+  }
 }
 
 export interface Bundle {

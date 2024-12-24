@@ -2,6 +2,7 @@
 import { DEFAULT_BUNDLE_IGNORE } from '../constants'
 import type { WatchedFile, WatchState } from '../types/watcher'
 import type { FileSystemDirectoryHandle } from '../types/filesystem'
+import { TagsConfig } from '@/types/tags'
 
 /**
  * Creates the initial .sourcery directory structure and configuration
@@ -56,6 +57,16 @@ export default ${JSON.stringify(DEFAULT_BUNDLE_IGNORE, null, 2)} as const;
   const writable = await ignoreHandle.createWritable()
   await writable.write(content)
   await writable.close()
+
+  // Create tags.ts
+  const initialTags: TagsConfig = {}
+  const tagsContent = `// .sourcery/config/tags.ts
+export default ${JSON.stringify(initialTags, null, 2)} as const;
+`
+  const tagsHandle = await configDir.getFileHandle('tags.ts', { create: true })
+  const tagsWritable = await tagsHandle.createWritable()
+  await tagsWritable.write(tagsContent)
+  await tagsWritable.close()
 }
 
 async function initializeStateFile(sourceryDir: FileSystemDirectoryHandle) {
@@ -64,6 +75,7 @@ async function initializeStateFile(sourceryDir: FileSystemDirectoryHandle) {
   const initialState: WatchState = {
     lastAccessed: new Date().toISOString(),
     files: {},
+    tags: {},
   }
 
   const stateHandle = await stateDir.getFileHandle('file-status.json', {
@@ -165,5 +177,45 @@ export async function loadBundleIgnore(
     console.error('Error loading bundle ignore patterns:', error)
     console.log('Using default ignore patterns:', DEFAULT_BUNDLE_IGNORE)
     return DEFAULT_BUNDLE_IGNORE
+  }
+}
+
+export async function saveTagsConfig(
+  sourceryDir: FileSystemDirectoryHandle,
+  tags: TagsConfig
+) {
+  try {
+    const configDir = await sourceryDir.getDirectoryHandle('config')
+    const tagsHandle = await configDir.getFileHandle('tags.ts', {
+      create: true,
+    })
+    const writable = await tagsHandle.createWritable()
+    await writable.write(
+      `export default ${JSON.stringify(tags, null, 2)} as const;`
+    )
+    await writable.close()
+  } catch (error) {
+    console.error('Error saving tags config:', error)
+  }
+}
+
+export async function loadTagsConfig(
+  sourceryDir: FileSystemDirectoryHandle
+): Promise<TagsConfig> {
+  try {
+    const configDir = await sourceryDir.getDirectoryHandle('config')
+    const tagsHandle = await configDir.getFileHandle('tags.ts')
+    const file = await tagsHandle.getFile()
+    const content = await file.text()
+    const match = content.match(/export default ({[\s\S]*});/)
+    if (!match) {
+      console.log('No tags found, using empty object')
+      return {}
+    }
+    const tagsContent = match[1]
+    return JSON.parse(tagsContent)
+  } catch (error) {
+    console.error('Error loading tags:', error)
+    return {}
   }
 }
