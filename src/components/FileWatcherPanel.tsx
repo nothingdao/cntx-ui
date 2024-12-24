@@ -20,7 +20,7 @@ export function FileWatcherPanel() {
     currentDirectory
   } = useFileWatcher();
 
-  const handleTestBundle = async () => {
+  const handleMakeBundle = async () => {
     if (stagedFiles.length === 0) {
       console.log('No files staged for bundle');
       return;
@@ -69,13 +69,12 @@ export function FileWatcherPanel() {
         </TabsList>
         <TabsContent value="files">
 
-
           <div className="flex items-center justify-between py-4 gap-2">
             <div className="flex items-center gap-2">
               {isWatching && (
                 <>
                   <Button
-                    onClick={handleTestBundle}
+                    onClick={handleMakeBundle}
                     variant="outline"
                     size="sm"
                     disabled={stagedFiles.length === 0}

@@ -1,7 +1,8 @@
 // src/utils/scan-utils.ts
-import { WatchedFile } from '../types/watcher'
+import type { WatchedFile } from '../types/watcher'
 import { shouldIgnorePath } from './config-utils'
-import {
+import { getPathParts } from './file-utils'
+import type {
   FileSystemDirectoryHandle,
   FileSystemFileHandle,
 } from '../types/filesystem'
@@ -16,6 +17,7 @@ export async function scanAllFiles(
   for await (const entry of dirHandle.values()) {
     const entryPath = path ? `${path}/${entry.name}` : entry.name
 
+    // Check if path should be ignored
     if (
       shouldIgnorePath(
         entryPath,
@@ -23,6 +25,7 @@ export async function scanAllFiles(
         entry.kind === 'directory'
       )
     ) {
+      console.log(`[IGNORE] ${entryPath}`)
       continue
     }
 
@@ -30,9 +33,7 @@ export async function scanAllFiles(
       const fileHandle = entry as FileSystemFileHandle
       const file = await fileHandle.getFile()
       const content = await file.text()
-      const pathParts = entryPath.split('/')
-      const name = pathParts.pop() || ''
-      const directory = pathParts.join('/') || 'Root'
+      const { name, directory } = getPathParts(entryPath)
 
       files.push({
         path: entryPath,
@@ -45,6 +46,7 @@ export async function scanAllFiles(
         lastBundled: null,
         handle: fileHandle,
       })
+      console.log(`[ADD] ${entryPath}`)
     } else if (entry.kind === 'directory') {
       const subDirHandle = await dirHandle.getDirectoryHandle(entry.name)
       const subFiles = await scanAllFiles(

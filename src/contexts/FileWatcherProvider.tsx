@@ -5,19 +5,16 @@ import type { WatchedFile } from '../types/watcher';
 import type { Bundle } from '../types/bundle';
 import { getPathParts } from '../utils/file-utils';
 import { shouldIgnorePath } from '../utils/config-utils';
-import {
-  initializeWatchDirectory,
-  saveState,
-  loadBundleIgnore,
-  type WatchState
-} from '../utils/watch-utils';
+import { initializeProject, loadBundleIgnore } from '../utils/project-utils';
+import { saveState, loadState, createBundle } from '../utils/file-state';
+import type { WatchState } from '../types/watcher';
 import { InitializationModal } from '../components/InitializationModal';
 import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem';
 
 export function FileWatcherProvider({ children }: { children: ReactNode }) {
   const [watchedFiles, setWatchedFiles] = useState<WatchedFile[]>([]);
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
-  const [watchDir, setWatchDir] = useState<FileSystemDirectoryHandle | null>(null);
+  const [sourceryDir, setSourceryDir] = useState<FileSystemDirectoryHandle | null>(null);
   const [isWatching, setIsWatching] = useState(false);
   const [showInitModal, setShowInitModal] = useState(false);
   const [ignorePatterns, setIgnorePatterns] = useState<string[]>([]);
@@ -25,10 +22,10 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
   const [bundles, setBundles] = useState<Bundle[]>([]);
 
   const loadBundles = useCallback(async () => {
-    if (!watchDir) return;
+    if (!sourceryDir) return;
 
     try {
-      const bundlesDir = await watchDir.getDirectoryHandle('bundles');
+      const bundlesDir = await sourceryDir.getDirectoryHandle('bundles');
       const bundles: Bundle[] = [];
 
       for await (const entry of bundlesDir.values()) {
@@ -49,7 +46,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error loading bundles:', error);
     }
-  }, [watchDir]);
+  }, [sourceryDir]);
 
   const updateFile = useCallback(async (handle: FileSystemFileHandle, relativePath: string) => {
     try {
@@ -87,7 +84,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     relativePath: string = ''
   ) => {
     if (ignorePatterns.length === 0) {
-      console.log('No ignore patterns loaded, skipping processing');
+      // console.log('No ignore patterns loaded, skipping processing');
       return;
     }
 
@@ -95,7 +92,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
       const entryPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
 
       if (shouldIgnorePath(entryPath, { ignore: ignorePatterns }, entry.kind === 'directory')) {
-        console.log(`Ignoring: ${entryPath}`);
+        // console.log(`Ignoring: ${entryPath}`);
         continue;
       }
 
@@ -111,9 +108,9 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     if (!directoryHandle) return;
 
     try {
-      const { watchDir: newWatchDir } = await initializeWatchDirectory(directoryHandle);
-      const patterns = await loadBundleIgnore(newWatchDir);
-      setWatchDir(newWatchDir as FileSystemDirectoryHandle | null);
+      const { sourceryDir: newSourceryDir } = await initializeProject(directoryHandle);
+      const patterns = await loadBundleIgnore(newSourceryDir);
+      setSourceryDir(newSourceryDir);
       setIgnorePatterns(patterns);
       setIsWatching(true);
       setShowInitModal(false);
@@ -127,7 +124,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     try {
       setWatchedFiles([]);
       setDirectoryHandle(null);
-      setWatchDir(null);
+      setSourceryDir(null);
       setIsWatching(false);
       setIgnorePatterns([]);
       setCurrentDirectory(null);
@@ -135,18 +132,32 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
       const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
 
       try {
-        const existingWatchDir = await dirHandle.getDirectoryHandle('.sourcery');
-        const patterns = await loadBundleIgnore(existingWatchDir);
+        // Check if project is already initialized
+        const existingSourceryDir = await dirHandle.getDirectoryHandle('.sourcery');
+        const patterns = await loadBundleIgnore(existingSourceryDir);
 
-        setWatchDir(existingWatchDir);
-        setDirectoryHandle(dirHandle);
-
+        // Load existing project
+        setSourceryDir(existingSourceryDir);
+        setDirectoryHandle(dirHandle as FileSystemDirectoryHandle);
         setIgnorePatterns(patterns);
         setIsWatching(true);
         setCurrentDirectory(dirHandle.name);
-      } catch {
-        setDirectoryHandle(dirHandle);
 
+        // Load existing state
+        const state = await loadState(existingSourceryDir);
+        if (state) {
+          // Update watched files with saved state
+          setWatchedFiles(prev => prev.map(file => ({
+            ...file,
+            isStaged: state.files[file.path]?.isStaged || false,
+            lastBundled: state.files[file.path]?.bundleTimestamp
+              ? new Date(state.files[file.path].bundleTimestamp)
+              : null
+          })));
+        }
+      } catch {
+        // Project needs initialization
+        setDirectoryHandle(dirHandle as FileSystemDirectoryHandle);
         setShowInitModal(true);
       }
     } catch (error) {
@@ -167,24 +178,33 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
     ));
   };
 
-  const createBundle = async (): Promise<string> => {
-    if (!watchDir) return '';
+  const createNewBundle = async (): Promise<string> => {
+    if (!sourceryDir) return '';
 
     const stagedFiles = watchedFiles.filter(file => file.isStaged);
+    if (stagedFiles.length === 0) return '';
 
     try {
-      const bundleContent = stagedFiles
-        .map(file => `<document>\n<source>${file.path}</source>\n<content>${file.content}</content>\n</document>`)
-        .join('\n\n');
+      const result = await createBundle(stagedFiles, sourceryDir);
 
-      // Update watched files to reflect new bundle state
-      setWatchedFiles(prev => prev.map(file =>
-        stagedFiles.some(f => f.path === file.path)
-          ? { ...file, isChanged: false, lastBundled: new Date() }
-          : file
-      ));
+      if (result.success) {
+        // Update watched files to reflect new bundle state
+        setWatchedFiles(prev => prev.map(file =>
+          stagedFiles.some(f => f.path === file.path)
+            ? { ...file, isChanged: false, lastBundled: new Date() }
+            : file
+        ));
 
-      return bundleContent;
+        // Create the content for the UI
+        const bundleContent = stagedFiles
+          .map(file => `<document>\n<source>${file.path}</source>\n<content>${file.content}</content>\n</document>`)
+          .join('\n\n');
+
+        return bundleContent;
+      } else {
+        console.error('Failed to create bundle:', result.error);
+        return '';
+      }
     } catch (error) {
       console.error('Error creating bundle:', error);
       return '';
@@ -203,7 +223,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
   }, [directoryHandle, ignorePatterns, isWatching, processDirectory]);
 
   useEffect(() => {
-    if (watchDir && isWatching) {
+    if (sourceryDir && isWatching) {
       const state: WatchState = {
         lastAccessed: new Date().toISOString(),
         files: watchedFiles.reduce((acc, file) => ({
@@ -214,9 +234,9 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
           }
         }), {})
       };
-      saveState(watchDir, state).catch(console.error);
+      saveState(sourceryDir, state).catch(console.error);
     }
-  }, [watchedFiles, watchDir, isWatching]);
+  }, [watchedFiles, sourceryDir, isWatching]);
 
   return (
     <FileWatcherContext.Provider
@@ -226,7 +246,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
         selectDirectory,
         refreshFiles,
         isWatching,
-        createBundle,
+        createBundle: createNewBundle,
         toggleStaged,
         currentDirectory,
         bundles,
@@ -239,7 +259,7 @@ export function FileWatcherProvider({ children }: { children: ReactNode }) {
         onComplete={handleInitComplete}
         dirHandle={directoryHandle!}
         watchedFiles={watchedFiles}
-        createBundle={createBundle}
+        refreshFiles={refreshFiles}
       />
     </FileWatcherContext.Provider>
   );
