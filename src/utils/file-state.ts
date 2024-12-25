@@ -1,7 +1,13 @@
 // src/utils/file-state.ts
-// nice
 import { BundleManifest } from '@/types/bundle'
 import type { WatchedFile, WatchState } from '../types/watcher'
+
+const DEFAULT_STATE: WatchState = {
+  lastAccessed: new Date().toISOString(),
+  files: {},
+  tags: {},
+  masterBundle: null,
+}
 
 export async function loadState(
   rufasDir: FileSystemDirectoryHandle,
@@ -15,18 +21,47 @@ export async function loadState(
     const content = await file.text()
 
     try {
-      return JSON.parse(content)
+      // Attempt to parse the JSON content
+      const parsedState = JSON.parse(content)
+
+      // Validate and sanitize the state
+      const sanitizedState: WatchState = {
+        lastAccessed: parsedState.lastAccessed || new Date().toISOString(),
+        files: {},
+        tags: parsedState.tags || {},
+        masterBundle: parsedState.masterBundle || null,
+      }
+
+      // Sanitize file entries
+      if (parsedState.files && typeof parsedState.files === 'object') {
+        for (const [path, fileState] of Object.entries(parsedState.files)) {
+          if (fileState && typeof fileState === 'object') {
+            sanitizedState.files[path] = {
+              masterBundleId: (fileState as any).masterBundleId,
+              lastModified:
+                (fileState as any).lastModified || new Date().toISOString(),
+              isStaged: Boolean((fileState as any).isStaged),
+            }
+          }
+        }
+      }
+
+      return sanitizedState
     } catch (parseError) {
       console.error('Invalid JSON content:', content)
       console.error('Parse error:', parseError)
-      throw parseError
+
+      // If parsing fails, return a fresh state
+      return { ...DEFAULT_STATE }
     }
   } catch (error) {
     if (error.name === 'NotReadableError' && retries > 0) {
       await new Promise((resolve) => setTimeout(resolve, retryDelay))
       return loadState(rufasDir, retries - 1, retryDelay)
     }
-    throw error
+
+    // If all retries fail, return a fresh state
+    return { ...DEFAULT_STATE }
   }
 }
 
@@ -40,9 +75,8 @@ export async function saveState(
       create: true,
     })
 
-    const writable = await handle.createWritable()
+    // Create a sanitized copy of the state
     const sanitizedState = {
-      ...state,
       lastAccessed: new Date().toISOString(),
       files: Object.fromEntries(
         Object.entries(state.files).map(([path, fileState]) => [
@@ -50,17 +84,34 @@ export async function saveState(
           {
             masterBundleId: fileState.masterBundleId,
             lastModified: fileState.lastModified || new Date().toISOString(),
-            isStaged: fileState.isStaged || false,
+            isStaged: Boolean(fileState.isStaged),
           },
         ])
       ),
+      tags: state.tags || {},
       masterBundle: state.masterBundle || null,
     }
 
-    await writable.write(JSON.stringify(sanitizedState, null, 2))
+    const writable = await handle.createWritable()
+
+    // Pretty print the JSON with proper escaping
+    const jsonContent = JSON.stringify(sanitizedState, null, 2)
+    await writable.write(jsonContent)
     await writable.close()
   } catch (error) {
     console.error('Error saving state:', error)
+    // Attempt to recover by recreating the state file
+    try {
+      const stateDir = await rufasDir.getDirectoryHandle('state')
+      const handle = await stateDir.getFileHandle('file-status.json', {
+        create: true,
+      })
+      const writable = await handle.createWritable()
+      await writable.write(JSON.stringify(DEFAULT_STATE, null, 2))
+      await writable.close()
+    } catch (recoveryError) {
+      console.error('Failed to recover state file:', recoveryError)
+    }
   }
 }
 
@@ -97,7 +148,6 @@ export async function createBundleFile(
     const timestamp = new Date().toISOString()
     const bundlesDir = await rufasDir.getDirectoryHandle('bundles')
 
-    // Create bundle content
     const bundleContent = files
       .map(
         (file) =>
@@ -105,7 +155,6 @@ export async function createBundleFile(
       )
       .join('\n\n')
 
-    // Save bundle file
     const bundleHandle = await bundlesDir.getFileHandle(`${bundleId}.txt`, {
       create: true,
     })
@@ -113,7 +162,6 @@ export async function createBundleFile(
     await writable.write(bundleContent)
     await writable.close()
 
-    // Create and save manifest
     const manifest: BundleManifest = {
       id: bundleId,
       created: timestamp,
@@ -125,7 +173,6 @@ export async function createBundleFile(
     }
     await saveBundleManifest(bundlesDir, manifest)
 
-    // Update state (just to unset staged flags)
     const state = await loadState(rufasDir)
     files.forEach((file) => {
       if (!state.files[file.path]) {

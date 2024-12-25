@@ -283,11 +283,16 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
   );
 
   useEffect(() => {
-    if (rufasDir && isWatching) {
+    if (rufasDir && isWatching && watchedFiles.length > 0) {
+      let isCurrent = true;
+
       const saveCurrentState = async () => {
         try {
-          // First load existing state to preserve masterBundle
-          const existingState = await loadState(rufasDir)
+          // Load existing state once
+          const existingState = await loadState(rufasDir);
+
+          // Only proceed if this is still the current effect
+          if (!isCurrent) return;
 
           const newState = {
             ...existingState,
@@ -295,20 +300,28 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
             files: watchedFiles.reduce((acc, file) => ({
               ...acc,
               [file.path]: {
-                masterBundleId: file.masterBundleId,
+                masterBundleId: existingState.files[file.path]?.masterBundleId,
                 lastModified: file.lastModified.toISOString(),
                 isStaged: file.isStaged
               }
             }), {}),
-          }
-          await saveState(rufasDir, newState)
+          };
+
+          await saveState(rufasDir, newState);
         } catch (error) {
-          console.error('Error saving state:', error)
+          console.error('Error saving state:', error);
         }
-      }
-      saveCurrentState()
+      };
+
+      // Debounce the state saving to prevent rapid successive updates
+      const timeoutId = setTimeout(saveCurrentState, 100);
+
+      return () => {
+        isCurrent = false;
+        clearTimeout(timeoutId);
+      };
     }
-  }, [watchedFiles, rufasDir, isWatching])
+  }, [watchedFiles, rufasDir, isWatching]);
 
   useEffect(() => {
     if (directoryHandle && ignorePatterns.length > 0 && isWatching) {

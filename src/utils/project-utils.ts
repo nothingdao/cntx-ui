@@ -75,9 +75,9 @@ async function initializeStateFile(rufasDir: FileSystemDirectoryHandle) {
   // Create with new structure
   const initialState: WatchState = {
     lastAccessed: new Date().toISOString(),
-    files: {}, // Will contain bundleHistory, lastModified, etc. per file
+    files: {},
     tags: {},
-    masterBundle: null, // No master bundle initially
+    masterBundle: null,
   }
 
   const stateHandle = await stateDir.getFileHandle('file-status.json', {
@@ -133,25 +133,29 @@ export async function createMasterBundle(
     }
     await saveBundleManifest(bundlesDir, manifest, true)
 
-    // Update state
-    state.masterBundle = {
-      id: bundleId,
-      created: timestamp,
-      fileCount: files.length,
-    }
+    // Update state with a fresh file state object
+    const updatedFiles = { ...state.files }
 
-    // Update file states
+    // Update ALL files with their current state and masterBundleId
     files.forEach((file) => {
-      if (!state.files[file.path]) {
-        state.files[file.path] = {
-          lastModified: file.lastModified.toISOString(),
-          isStaged: false,
-        }
+      updatedFiles[file.path] = {
+        masterBundleId: bundleId,
+        lastModified: file.lastModified.toISOString(),
+        isStaged: false,
       }
-      state.files[file.path].masterBundleId = bundleId
     })
 
-    await saveState(rufasDir, state)
+    const updatedState = {
+      ...state,
+      files: updatedFiles,
+      masterBundle: {
+        id: bundleId,
+        created: timestamp,
+        fileCount: files.length,
+      },
+    }
+
+    await saveState(rufasDir, updatedState)
     return { success: true, bundleId }
   } catch (error) {
     console.error('Error creating master bundle:', error)
