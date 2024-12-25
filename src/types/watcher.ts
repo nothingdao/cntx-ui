@@ -1,7 +1,7 @@
 // src/types/watcher.ts
 import type { FileSystemFileHandle } from './filesystem'
 
-export type WatchedFile = {
+export interface WatchedFile {
   path: string
   name: string
   directory: string
@@ -9,7 +9,7 @@ export type WatchedFile = {
   lastModified: Date
   isChanged: boolean
   isStaged: boolean
-  lastBundled: Date | null
+  masterBundleId?: string
   handle?: FileSystemFileHandle
 }
 
@@ -26,14 +26,27 @@ export type DirectoryWatcherContextType = {
   loadBundles: () => Promise<void>
 }
 
-export type WatchState = {
+export type BundleHistoryEntry = {
+  bundleId: string
+  timestamp: string
+  type: 'master' | 'regular'
+}
+
+export interface FileState {
+  masterBundleId?: string // ID of last master bundle that included this file
+  lastModified: string
+  isStaged: boolean
+}
+
+export interface WatchState {
   lastAccessed: string
+  masterBundle: {
+    id: string
+    created: string
+    fileCount: number
+  } | null
   files: {
-    [path: string]: {
-      lastBundled: string | null
-      isStaged: boolean
-      bundleTimestamp?: string
-    }
+    [path: string]: FileState
   }
   tags: {
     [tagName: string]: string[]

@@ -9,7 +9,7 @@ type FileRowProps = {
 };
 
 export function FileRow({ file, onToggleStage }: FileRowProps) {
-  const hasChangedSinceLastBundle = file.lastBundled && file.lastModified > file.lastBundled;
+  const hasChangedSinceLastBundle = file.bundleHistory.length > 0 && file.lastModified > new Date(file.bundleHistory[file.bundleHistory.length - 1].timestamp);
 
   return (
     <div className={`p-2 rounded-md ${file.isChanged ? 'bg-yellow-50' : 'bg-white'} flex items-center space-x-3  transition-colors`}>
@@ -26,10 +26,10 @@ export function FileRow({ file, onToggleStage }: FileRowProps) {
             <Clock className="h-3 w-3" />
             <span>{file.lastModified.toLocaleTimeString()}</span>
           </div>
-          {file.lastBundled && (
+          {file.bundleHistory.length > 0 && (
             <div className="flex items-center space-x-1">
               <History className="h-3 w-3" />
-              <span>{file.lastBundled.toLocaleTimeString()}</span>
+              <span>{new Date(file.bundleHistory[file.bundleHistory.length - 1].timestamp).toLocaleTimeString()}</span>
             </div>
           )}
         </div>

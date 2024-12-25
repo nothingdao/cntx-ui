@@ -7,7 +7,6 @@ import { getPathParts } from '../utils/file-utils';
 import { shouldIgnorePath } from '../utils/config-utils';
 import { createMasterBundle, initializeProject, loadBundleIgnore, loadTagsConfig, saveTagsConfig } from '../utils/project-utils';
 import { saveState, loadState, createBundleFile } from '../utils/file-state';
-import type { WatchState } from '../types/watcher';
 import { InitializationModal } from '../components/InitializationModal';
 import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem';
 import { TagsConfig } from '@/types/tags';
@@ -15,7 +14,7 @@ import { TagsConfig } from '@/types/tags';
 export function DirectoryWatcherProvider({ children }: { children: ReactNode }) {
   const [watchedFiles, setWatchedFiles] = useState<WatchedFile[]>([]);
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
-  const [rufasDir, setSourceryDir] = useState<FileSystemDirectoryHandle | null>(null);
+  const [rufasDir, setRufasDir] = useState<FileSystemDirectoryHandle | null>(null);
   const [isWatching, setIsWatching] = useState(false);
   const [showInitModal, setShowInitModal] = useState(false);
   const [ignorePatterns, setIgnorePatterns] = useState<string[]>([]);
@@ -23,94 +22,12 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [tags, setTags] = useState<TagsConfig>({});
 
-
-  useEffect(() => {
-    if (rufasDir) {
-      loadTagsConfig(rufasDir)
-        .then((loadedTags) => {
-          setTags(loadedTags);
-        })
-        .catch(console.error);
-    }
-  }, [rufasDir]);
-
-
-  const addTag = async (name: string, color: string, description: string) => {
-    if (!rufasDir) return;
-
-    setTags((prevTags) => {
-      // Create new tags object preserving all existing tags
-      const newTags = {
-        ...prevTags,
-        [name]: {
-          color,
-          description
-        },
-      };
-      saveTagsConfig(rufasDir!, newTags).catch(console.error);
-      return newTags;
-    });
-  };
-
-  const deleteTag = async (name: string) => {
-    if (!rufasDir) return;
-
-    setTags((prevTags) => {
-      const newTags = { ...prevTags };
-      delete newTags[name];
-      saveTagsConfig(rufasDir!, newTags).catch(console.error);
-      return newTags;
-    });
-  };
-
-  const updateTag = async (name: string, color: string, description: string) => {
-    if (!rufasDir) return;
-
-    setTags((prevTags) => {
-      const newTags = {
-        ...prevTags,
-        [name]: {
-          color,
-          description
-        },
-      };
-      saveTagsConfig(rufasDir!, newTags).catch(console.error);
-      return newTags;
-    });
-  };
-
-  const loadBundles = useCallback(async () => {
-    if (!rufasDir) return;
-
-    try {
-      const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
-      const bundles: Bundle[] = [];
-
-      for await (const entry of bundlesDir.values()) {
-        if (entry.kind === 'file' && entry.name.endsWith('.txt')) {
-          const file = await (entry as FileSystemFileHandle).getFile();
-          const content = await file.text();
-          const fileCount = (content.match(/<document>/g) || []).length;
-
-          bundles.push({
-            name: entry.name,
-            timestamp: new Date(file.lastModified),
-            fileCount
-          });
-        }
-      }
-
-      setBundles(bundles.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
-    } catch (error) {
-      console.error('Error loading bundles:', error);
-    }
-  }, [rufasDir]);
-
   const updateFile = useCallback(async (handle: FileSystemFileHandle, relativePath: string) => {
     try {
       const file = await handle.getFile();
       const content = await file.text();
       const { name, directory, path } = getPathParts(relativePath);
+      const state = await loadState(rufasDir!);
 
       setWatchedFiles((prev) => {
         const existingFile = prev.find(f => f.path === path);
@@ -122,8 +39,8 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
           content,
           lastModified: new Date(file.lastModified),
           isChanged: existingFile?.isChanged || false,
-          isStaged: existingFile?.isStaged || false,
-          lastBundled: existingFile?.lastBundled || null,
+          isStaged: state?.files[path]?.isStaged || false,
+          masterBundleId: state?.files[path]?.masterBundleId, // Add this
           handle
         };
 
@@ -135,14 +52,13 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     } catch (error) {
       console.error(`Error reading file ${relativePath}:`, error);
     }
-  }, []);
+  }, [rufasDir]);
 
   const processDirectory = useCallback(async (
     dirHandle: FileSystemDirectoryHandle,
     relativePath: string = ''
   ) => {
     if (ignorePatterns.length === 0) {
-      // console.log('No ignore patterns loaded, skipping processing');
       return;
     }
 
@@ -150,7 +66,6 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
       const entryPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
 
       if (shouldIgnorePath(entryPath, { ignore: ignorePatterns }, entry.kind === 'directory')) {
-        // console.log(`Ignoring: ${entryPath}`);
         continue;
       }
 
@@ -162,19 +77,44 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     }
   }, [ignorePatterns, updateFile]);
 
+  const loadBundles = useCallback(async () => {
+    if (!rufasDir) return;
+
+    try {
+      const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
+      const loadedBundles: Bundle[] = [];
+
+      for await (const entry of bundlesDir.values()) {
+        if (entry.kind === 'file' && entry.name.endsWith('.txt')) {
+          const file = await (entry as FileSystemFileHandle).getFile();
+          const content = await file.text();
+          const fileCount = (content.match(/<document>/g) || []).length;
+
+          loadedBundles.push({
+            name: entry.name,
+            timestamp: new Date(file.lastModified),
+            fileCount
+          });
+        }
+      }
+
+      setBundles(loadedBundles.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+    } catch (error) {
+      console.error('Error loading bundles:', error);
+    }
+  }, [rufasDir]);
+
   const handleInitComplete = async () => {
     if (!directoryHandle) return;
 
     try {
-      const { rufasDir: newSourceryDir } = await initializeProject(directoryHandle);
-      const patterns = await loadBundleIgnore(newSourceryDir);
-      setSourceryDir(newSourceryDir);
+      const { rufasDir: newRufasDir } = await initializeProject(directoryHandle);
+      const patterns = await loadBundleIgnore(newRufasDir);
+      setRufasDir(newRufasDir);
       setIgnorePatterns(patterns);
       setIsWatching(true);
       setShowInitModal(false);
       setCurrentDirectory(directoryHandle.name);
-
-      // Refresh files after initialization
       await refreshFiles();
     } catch (error) {
       console.error('Error completing initialization:', error);
@@ -185,44 +125,38 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     try {
       setWatchedFiles([]);
       setDirectoryHandle(null);
-      setSourceryDir(null);
+      setRufasDir(null);
       setIsWatching(false);
       setIgnorePatterns([]);
       setCurrentDirectory(null);
 
-      const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
 
       try {
-        // Check if project is already initialized
-        const existingSourceryDir = await dirHandle.getDirectoryHandle('.rufas');
-        const patterns = await loadBundleIgnore(existingSourceryDir);
+        const existingRufasDir = await dirHandle.getDirectoryHandle('.rufas');
+        const patterns = await loadBundleIgnore(existingRufasDir);
 
-        // Load existing project
-        setSourceryDir(existingSourceryDir);
-        setDirectoryHandle(dirHandle as FileSystemDirectoryHandle);
+        setRufasDir(existingRufasDir);
+        setDirectoryHandle(dirHandle);
         setIgnorePatterns(patterns);
         setIsWatching(true);
         setCurrentDirectory(dirHandle.name);
 
-        // Load tags config - ADDED THIS EXPLICIT CALL
-        const existingTags = await loadTagsConfig(existingSourceryDir);
+        const existingTags = await loadTagsConfig(existingRufasDir);
         setTags(existingTags);
 
-        // Load existing state
-        const state = await loadState(existingSourceryDir);
+        const state = await loadState(existingRufasDir);
         if (state) {
-          // Update watched files with saved state
           setWatchedFiles(prev => prev.map(file => ({
             ...file,
             isStaged: state.files[file.path]?.isStaged || false,
-            lastBundled: state.files[file.path]?.bundleTimestamp
-              ? new Date(state.files[file.path].bundleTimestamp)
-              : null,
+            masterBundleId: state.files[file.path]?.masterBundleId
           })));
         }
+
+        await processDirectory(dirHandle);
       } catch {
-        // Project needs initialization
-        setDirectoryHandle(dirHandle as FileSystemDirectoryHandle);
+        setDirectoryHandle(dirHandle);
         setShowInitModal(true);
       }
     } catch (error) {
@@ -235,18 +169,46 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     await processDirectory(directoryHandle);
   }, [directoryHandle, processDirectory]);
 
-  const toggleStaged = useCallback((paths: string[]) => {
-    // Get the target state from the first path's current state
-    const firstFile = watchedFiles.find(f => f.path === paths[0]);
-    if (!firstFile) return;
-    const targetState = !firstFile.isStaged;
+  const toggleStaged = useCallback(async (paths: string[]) => {
+    if (!rufasDir) return;
 
-    setWatchedFiles(prev => prev.map(file =>
-      paths.includes(file.path)
-        ? { ...file, isStaged: targetState }
-        : file
-    ));
-  }, [watchedFiles]);
+    try {
+      const state = await loadState(rufasDir);
+      const firstPath = paths[0];
+      let targetState = false;
+
+      if (state.files[firstPath]) {
+        targetState = !state.files[firstPath].isStaged;
+      }
+
+      paths.forEach(path => {
+        if (!state.files[path]) {
+          state.files[path] = {
+            lastModified: new Date().toISOString(),
+            isStaged: targetState,
+            masterBundleId: undefined
+          };
+        } else {
+          state.files[path].isStaged = targetState;
+        }
+      });
+
+      await saveState(rufasDir, state);
+
+      setWatchedFiles(prev => prev.map(file =>
+        paths.includes(file.path)
+          ? { ...file, isStaged: targetState }
+          : file
+      ));
+    } catch (error) {
+      console.error('Error toggling staged status:', error);
+    }
+  }, [rufasDir]);
+
+  const createMasterBundleWrapper = useCallback(async () => {
+    if (!rufasDir) return;
+    await createMasterBundle(watchedFiles, rufasDir);
+  }, [rufasDir, watchedFiles]);
 
   const createBundle = async (): Promise<string> => {
     if (!rufasDir) return '';
@@ -258,28 +220,62 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
       const result = await createBundleFile(stagedFiles, rufasDir);
 
       if (result.success) {
-        // Update watched files to reflect new bundle state
         setWatchedFiles(prev => prev.map(file =>
           stagedFiles.some(f => f.path === file.path)
-            ? { ...file, isChanged: false, lastBundled: new Date() }
+            ? { ...file, isChanged: false }
             : file
         ));
 
-        // Create the content for the UI
         const bundleContent = stagedFiles
-          .map(file => `<document>\n<source>${file.path}</source>\n<content>${file.content}</content>\n</document>`)
+          .map(file => `\n${file.path}\n${file.content}\n`)
           .join('\n\n');
 
         return bundleContent;
-      } else {
-        console.error('Failed to create bundle:', result.error);
-        return '';
       }
+      console.error('Failed to create bundle:', result.error);
+      return '';
     } catch (error) {
       console.error('Error creating bundle:', error);
       return '';
     }
   };
+
+  const addTag = useCallback(async (name: string, color: string, description: string) => {
+    if (!rufasDir) return;
+
+    setTags((prevTags) => {
+      const newTags = {
+        ...prevTags,
+        [name]: { color, description }
+      };
+      saveTagsConfig(rufasDir, newTags).catch(console.error);
+      return newTags;
+    });
+  }, [rufasDir]);
+
+  const deleteTag = useCallback(async (name: string) => {
+    if (!rufasDir) return;
+
+    setTags((prevTags) => {
+      const newTags = { ...prevTags };
+      delete newTags[name];
+      saveTagsConfig(rufasDir, newTags).catch(console.error);
+      return newTags;
+    });
+  }, [rufasDir]);
+
+  const updateTag = useCallback(async (name: string, color: string, description: string) => {
+    if (!rufasDir) return;
+
+    setTags((prevTags) => {
+      const newTags = {
+        ...prevTags,
+        [name]: { color, description }
+      };
+      saveTagsConfig(rufasDir, newTags).catch(console.error);
+      return newTags;
+    });
+  }, [rufasDir]);
 
   const stagedFiles = useMemo(() =>
     watchedFiles.filter(f => f.isStaged),
@@ -287,32 +283,38 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
   );
 
   useEffect(() => {
+    if (rufasDir && isWatching) {
+      const saveCurrentState = async () => {
+        try {
+          // First load existing state to preserve masterBundle
+          const existingState = await loadState(rufasDir)
+
+          const newState = {
+            ...existingState,
+            lastAccessed: new Date().toISOString(),
+            files: watchedFiles.reduce((acc, file) => ({
+              ...acc,
+              [file.path]: {
+                masterBundleId: file.masterBundleId,
+                lastModified: file.lastModified.toISOString(),
+                isStaged: file.isStaged
+              }
+            }), {}),
+          }
+          await saveState(rufasDir, newState)
+        } catch (error) {
+          console.error('Error saving state:', error)
+        }
+      }
+      saveCurrentState()
+    }
+  }, [watchedFiles, rufasDir, isWatching])
+
+  useEffect(() => {
     if (directoryHandle && ignorePatterns.length > 0 && isWatching) {
       processDirectory(directoryHandle);
     }
   }, [directoryHandle, ignorePatterns, isWatching, processDirectory]);
-
-  useEffect(() => {
-    if (rufasDir && isWatching) {
-      const state: WatchState = {
-        lastAccessed: new Date().toISOString(),
-        files: watchedFiles.reduce((acc, file) => ({
-          ...acc,
-          [file.path]: {
-            lastBundled: file.lastBundled?.toISOString() || null,
-            isStaged: file.isStaged
-          }
-        }), {}),
-        tags: {},
-      };
-      saveState(rufasDir, state).catch(console.error);
-    }
-  }, [watchedFiles, rufasDir, isWatching]);
-
-  const createMasterBundleWrapper = async () => {
-    if (!rufasDir) return;
-    await createMasterBundle(watchedFiles, rufasDir);
-  };
 
   return (
     <DirectoryWatcherContext.Provider

@@ -2,6 +2,7 @@
 export interface FileSystemHandle {
   kind: 'file' | 'directory'
   name: string
+  getFile(): Promise<File>
 }
 
 export interface FileSystemWritableFileStream extends WritableStream {

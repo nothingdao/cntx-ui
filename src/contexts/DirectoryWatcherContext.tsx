@@ -1,19 +1,19 @@
 // src/contexts/DirectoryWatcherContext.tsx
-import { createContext } from 'react';
-import type { Bundle } from '../types/bundle';
-import { TagsConfig } from '@/types/tags';
-
-export type WatchedFile = {
-  path: string;
-  name: string;
-  directory: string;
-  content: string;
-  lastModified: Date;
-  isChanged: boolean;
-  isStaged: boolean;
-  lastBundled: Date | null;
-  handle?: FileSystemFileHandle;
-};
+import type { FileSystemDirectoryHandle, FileSystemFileHandle } from '../types/filesystem'
+import { createContext } from 'react'
+import type { Bundle } from '../types/bundle'
+import { TagsConfig } from '@/types/tags'
+export interface WatchedFile {
+  path: string
+  name: string
+  directory: string
+  content: string
+  lastModified: Date
+  isChanged: boolean
+  isStaged: boolean
+  masterBundleId?: string  // Add this to match our state structure
+  handle?: FileSystemFileHandle
+}
 
 export type DirectoryWatcherContextType = {
   watchedFiles: WatchedFile[];

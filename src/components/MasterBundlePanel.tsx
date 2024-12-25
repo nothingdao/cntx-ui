@@ -1,9 +1,10 @@
 // src/components/MasterBundlePanel.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { useDirectoryWatcher } from '../hooks/useDirectoryWatcher';
 import { HistoryIcon, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BundleManifest } from '@/types/bundle';
 
 type MasterBundleStatus = {
   exists: boolean;
@@ -23,52 +24,56 @@ export function MasterBundlePanel() {
   const [status, setStatus] = useState<MasterBundleStatus>({ exists: false });
   const [isCreating, setIsCreating] = useState(false);
 
-  const loadMasterBundleStatus = async () => {
+  const loadMasterBundleStatus = useCallback(async () => {
     if (!rufasDir) return;
 
     try {
+      // Look directly in the master bundles directory
       const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
       const masterDir = await bundlesDir.getDirectoryHandle('master');
 
-      // Look for the latest master bundle manifest
-      let latestManifest = null;
+      // Get all entries in master dir
+      const entries = [];
       for await (const entry of masterDir.values()) {
-        if (entry.name.endsWith('-manifest.json')) {
-          const file = await entry.getFile();
-          const content = await file.text();
-          const manifest = JSON.parse(content);
-
-          if (!latestManifest || manifest.created > latestManifest.created) {
-            latestManifest = manifest;
-          }
+        if (entry.kind === 'file' && entry.name.endsWith('-manifest.json')) {
+          entries.push(entry);
         }
       }
 
-      if (latestManifest) {
-        const modifiedFiles = watchedFiles.filter(file =>
-          file.lastModified > new Date(latestManifest.created)
-        );
-
-        setStatus({
-          exists: true,
-          lastCreated: new Date(latestManifest.created),
-          fileCount: latestManifest.fileCount,
-          modifiedFileCount: modifiedFiles.length
-        });
-      } else {
+      // If no manifest found, no master bundle exists
+      if (entries.length === 0) {
         setStatus({ exists: false });
+        return;
       }
+
+      // Get the latest manifest
+      const latestManifest = entries.sort((a, b) => b.name.localeCompare(a.name))[0];
+      const manifestFile = await latestManifest.getFile();
+      const manifest: BundleManifest = JSON.parse(await manifestFile.text());
+
+      // Compare files against manifest
+      const modifiedFiles = watchedFiles.filter(file => {
+        const manifestFile = manifest.files.find(f => f.path === file.path);
+        return manifestFile && new Date(file.lastModified) > new Date(manifestFile.lastModified);
+      });
+
+      setStatus({
+        exists: true,
+        lastCreated: new Date(manifest.created),
+        fileCount: manifest.fileCount,
+        modifiedFileCount: modifiedFiles.length
+      });
     } catch (error) {
       console.error('Error loading master bundle status:', error);
       setStatus({ exists: false });
     }
-  };
+  }, [rufasDir, watchedFiles]);
 
   useEffect(() => {
-    if (isWatching) {
+    if (isWatching && rufasDir) {
       loadMasterBundleStatus();
     }
-  }, [isWatching, watchedFiles]);
+  }, [isWatching, rufasDir, loadMasterBundleStatus]);
 
   const handleCreateMasterBundle = async () => {
     setIsCreating(true);
@@ -106,7 +111,7 @@ export function MasterBundlePanel() {
                 <div className="text-sm">
                   Files included: {status.fileCount}
                 </div>
-                {status.modifiedFileCount > 0 && (
+                {status.modifiedFileCount !== undefined && status.modifiedFileCount > 0 && (
                   <div className="flex items-center space-x-2 text-amber-500">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">

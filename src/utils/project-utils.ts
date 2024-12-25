@@ -1,8 +1,11 @@
 // src/utils/project-utils.ts
+// nice
 import { DEFAULT_BUNDLE_IGNORE, DEFAULT_TAGS } from '../constants'
 import type { WatchedFile, WatchState } from '../types/watcher'
 import type { FileSystemDirectoryHandle } from '../types/filesystem'
 import { TagsConfig } from '@/types/tags'
+import { loadState, saveState, saveBundleManifest } from './file-state'
+import { BundleManifest } from '@/types/bundle'
 
 /**
  * Creates the initial .rufas directory structure and configuration
@@ -67,12 +70,14 @@ export default ${JSON.stringify(DEFAULT_TAGS, null, 2)} as const;
 }
 
 async function initializeStateFile(rufasDir: FileSystemDirectoryHandle) {
-  const stateDir = await rufasDir.getDirectoryHandle('state')
+  const stateDir = await rufasDir.getDirectoryHandle('state', { create: true })
 
+  // Create with new structure
   const initialState: WatchState = {
     lastAccessed: new Date().toISOString(),
-    files: {},
+    files: {}, // Will contain bundleHistory, lastModified, etc. per file
     tags: {},
+    masterBundle: null, // No master bundle initially
   }
 
   const stateHandle = await stateDir.getFileHandle('file-status.json', {
@@ -92,6 +97,7 @@ export async function createMasterBundle(
   rufasDir: FileSystemDirectoryHandle
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {
   try {
+    const state = await loadState(rufasDir)
     const bundleId = `master-${new Date().toISOString().replace(/[:.]/g, '-')}`
     const timestamp = new Date().toISOString()
 
@@ -115,22 +121,37 @@ export async function createMasterBundle(
     await writable.write(bundleContent)
     await writable.close()
 
-    // Save manifest for reference
-    const manifest = {
-      bundleId,
+    // Create and save manifest
+    const manifest: BundleManifest = {
+      id: bundleId,
       created: timestamp,
       fileCount: files.length,
-      files: files.map((f) => ({ path: f.path })),
+      files: files.map((file) => ({
+        path: file.path,
+        lastModified: file.lastModified.toISOString(),
+      })),
+    }
+    await saveBundleManifest(bundlesDir, manifest, true)
+
+    // Update state
+    state.masterBundle = {
+      id: bundleId,
+      created: timestamp,
+      fileCount: files.length,
     }
 
-    const manifestHandle = await masterDir.getFileHandle(
-      `${bundleId}-manifest.json`,
-      { create: true }
-    )
-    const manifestWritable = await manifestHandle.createWritable()
-    await manifestWritable.write(JSON.stringify(manifest, null, 2))
-    await manifestWritable.close()
+    // Update file states
+    files.forEach((file) => {
+      if (!state.files[file.path]) {
+        state.files[file.path] = {
+          lastModified: file.lastModified.toISOString(),
+          isStaged: false,
+        }
+      }
+      state.files[file.path].masterBundleId = bundleId
+    })
 
+    await saveState(rufasDir, state)
     return { success: true, bundleId }
   } catch (error) {
     console.error('Error creating master bundle:', error)
