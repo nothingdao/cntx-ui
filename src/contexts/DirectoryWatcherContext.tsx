@@ -33,6 +33,10 @@ export type DirectoryWatcherContextType = {
   addTag: (name: string, color: string, description: string) => void;
   deleteTag: (name: string) => void;
   updateTag: (name: string, color: string, description: string) => void;
+  addTagToFiles: (tag: string, paths: string[]) => Promise<void>
+  removeTagFromFiles: (tag: string, paths: string[]) => Promise<void>
+  getFilesWithTag: (tag: string) => WatchedFile[]
+  getTagsForFile: (path: string) => string[]
 };
 
 export const DirectoryWatcherContext = createContext<DirectoryWatcherContextType>({
@@ -52,4 +56,8 @@ export const DirectoryWatcherContext = createContext<DirectoryWatcherContextType
   addTag: () => { },
   deleteTag: () => { },
   updateTag: () => { },
+  addTagToFiles: async () => { },
+  removeTagFromFiles: async () => { },
+  getFilesWithTag: () => [],
+  getTagsForFile: () => [],
 });

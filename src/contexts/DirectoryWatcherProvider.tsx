@@ -240,6 +240,8 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
     }
   };
 
+
+  // Tag management
   const addTag = useCallback(async (name: string, color: string, description: string) => {
     if (!rufasDir) return;
 
@@ -276,6 +278,94 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
       return newTags;
     });
   }, [rufasDir]);
+
+
+  const addTagToFiles = useCallback(async (tag: string, paths: string[]) => {
+    if (!rufasDir) return;
+
+    try {
+      const state = await loadState(rufasDir);
+
+      // Update the state's tags mapping
+      if (!state.tags[tag]) {
+        state.tags[tag] = [];
+      }
+
+      paths.forEach(path => {
+        // Add tag to file's tags list
+        if (!state.files[path].tags) {
+          state.files[path].tags = [];
+        }
+        if (!state.files[path].tags.includes(tag)) {
+          state.files[path].tags.push(tag);
+        }
+
+        // Add file to tag's files list
+        if (!state.tags[tag].includes(path)) {
+          state.tags[tag].push(path);
+        }
+      });
+
+      await saveState(rufasDir, state);
+
+      // Update the watchedFiles state
+      setWatchedFiles(prev => prev.map(file => {
+        if (paths.includes(file.path)) {
+          return {
+            ...file,
+            tags: [...(file.tags || []), tag]
+          };
+        }
+        return file;
+      }));
+    } catch (error) {
+      console.error('Error adding tags to files:', error);
+    }
+  }, [rufasDir, setWatchedFiles]);
+
+  const removeTagFromFiles = useCallback(async (tag: string, paths: string[]) => {
+    if (!rufasDir) return;
+
+    try {
+      const state = await loadState(rufasDir);
+
+      paths.forEach(path => {
+        // Remove tag from file's tags list
+        if (state.files[path].tags) {
+          state.files[path].tags = state.files[path].tags.filter(t => t !== tag);
+        }
+
+        // Remove file from tag's files list
+        if (state.tags[tag]) {
+          state.tags[tag] = state.tags[tag].filter(p => p !== path);
+        }
+      });
+
+      await saveState(rufasDir, state);
+
+      // Update the watchedFiles state
+      setWatchedFiles(prev => prev.map(file => {
+        if (paths.includes(file.path)) {
+          return {
+            ...file,
+            tags: (file.tags || []).filter(t => t !== tag)
+          };
+        }
+        return file;
+      }));
+    } catch (error) {
+      console.error('Error removing tags from files:', error);
+    }
+  }, [rufasDir, setWatchedFiles]);
+
+  const getFilesWithTag = useCallback((tag: string) => {
+    return watchedFiles.filter(file => file.tags?.includes(tag));
+  }, [watchedFiles]);
+
+  const getTagsForFile = useCallback((path: string) => {
+    const file = watchedFiles.find(f => f.path === path);
+    return file?.tags || [];
+  }, [watchedFiles]);
 
   const stagedFiles = useMemo(() =>
     watchedFiles.filter(f => f.isStaged),
@@ -347,7 +437,11 @@ export function DirectoryWatcherProvider({ children }: { children: ReactNode }) 
         createMasterBundle: createMasterBundleWrapper,
         rufasDir,
         deleteTag,
-        updateTag
+        updateTag,
+        addTagToFiles,
+        removeTagFromFiles,
+        getFilesWithTag,
+        getTagsForFile
       }}
     >
       {children}

@@ -11,6 +11,7 @@ export interface WatchedFile {
   isStaged: boolean
   masterBundleId?: string
   handle?: FileSystemFileHandle
+  tags: string[]
 }
 
 export type DirectoryWatcherContextType = {
@@ -40,17 +41,22 @@ export interface FileState {
 
 export interface WatchState {
   lastAccessed: string
+  files: {
+    [path: string]: {
+      masterBundleId?: string
+      lastModified: string
+      isStaged: boolean
+      tags?: string[] // Add this line
+    }
+  }
+  tags: {
+    [tagName: string]: string[] // paths of files with this tag
+  }
   masterBundle: {
     id: string
     created: string
     fileCount: number
   } | null
-  files: {
-    [path: string]: FileState
-  }
-  tags: {
-    [tagName: string]: string[]
-  }
 }
 
 export interface Bundle {

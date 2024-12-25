@@ -6,6 +6,7 @@ import type { WatchedFile } from '@/contexts/DirectoryWatcherContext';
 import { getAllDirectories } from '../utils/file-utils';
 import { useDirectoryWatcher } from '@/hooks/useDirectoryWatcher';
 import { BundleManifest } from '@/types/bundle';
+import { FileTagsDisplay } from './FileTagsDisplay';
 
 type DirectoryTreeProps = {
   files: WatchedFile[];
@@ -30,21 +31,26 @@ function FileRow({
     new Date(file.lastModified) > new Date(manifestFile.lastModified);
 
   return (
-    <div className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded-md"
-      style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
-      <Checkbox
-        checked={file.isStaged}
-        onCheckedChange={() => { }}
-        onClick={onCheckboxClick}
-        className="cursor-pointer"
-      />
-      <FileIcon className="h-4 w-4 text-muted-foreground" />
-      <span className="flex-1 truncate text-sm">
-        {file.name}
-      </span>
-      {isModifiedSinceMaster && (
-        <SquareDot size={16} className="text-primary" />
-      )}
+    <div className="space-y-1">
+      <div className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded-md"
+        style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
+        <Checkbox
+          checked={file.isStaged}
+          onCheckedChange={() => { }}
+          onClick={onCheckboxClick}
+          className="cursor-pointer"
+        />
+        <FileIcon className="h-4 w-4 text-muted-foreground" />
+        <span className="flex-1 truncate text-sm">
+          {file.name}
+        </span>
+        {isModifiedSinceMaster && (
+          <SquareDot size={16} className="text-primary" />
+        )}
+      </div>
+      <div style={{ paddingLeft: `${(depth + 2) * 12}px` }}>
+        <FileTagsDisplay filePath={file.path} />
+      </div>
     </div>
   );
 }
