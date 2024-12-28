@@ -1,11 +1,9 @@
 // src/utils/file-state.ts
-import { BundleManifest } from '@/types/bundle'
-import type { WatchedFile, WatchState } from '../types/watcher'
+import { BundleManifest, WatchedFile, WatchState } from '@/types/types'
 
-const DEFAULT_STATE: WatchState = {
+export const DEFAULT_STATE: WatchState = {
   lastAccessed: new Date().toISOString(),
   files: {},
-  tags: {},
   masterBundle: null,
 }
 
@@ -16,7 +14,7 @@ export async function loadState(
 ): Promise<WatchState> {
   try {
     const stateDir = await rufasDir.getDirectoryHandle('state')
-    const handle = await stateDir.getFileHandle('file-status.json')
+    const handle = await stateDir.getFileHandle('file.json')
     const file = await handle.getFile()
     const content = await file.text()
 
@@ -28,7 +26,6 @@ export async function loadState(
       const sanitizedState: WatchState = {
         lastAccessed: parsedState.lastAccessed || new Date().toISOString(),
         files: {},
-        tags: parsedState.tags || {},
         masterBundle: parsedState.masterBundle || null,
       }
 
@@ -37,10 +34,19 @@ export async function loadState(
         for (const [path, fileState] of Object.entries(parsedState.files)) {
           if (fileState && typeof fileState === 'object') {
             sanitizedState.files[path] = {
-              masterBundleId: (fileState as any).masterBundleId,
+              name: (fileState as any).name || path.split('/').pop() || '',
+              directory:
+                (fileState as any).directory ||
+                path.split('/').slice(0, -1).join('/') ||
+                'Root',
               lastModified:
                 (fileState as any).lastModified || new Date().toISOString(),
+              isChanged: Boolean((fileState as any).isChanged),
               isStaged: Boolean((fileState as any).isStaged),
+              masterBundleId: (fileState as any).masterBundleId,
+              tags: Array.isArray((fileState as any).tags)
+                ? (fileState as any).tags
+                : [],
             }
           }
         }
@@ -71,7 +77,7 @@ export async function saveState(
 ) {
   try {
     const stateDir = await rufasDir.getDirectoryHandle('state')
-    const handle = await stateDir.getFileHandle('file-status.json', {
+    const handle = await stateDir.getFileHandle('file.json', {
       create: true,
     })
 
@@ -82,19 +88,20 @@ export async function saveState(
         Object.entries(state.files).map(([path, fileState]) => [
           path,
           {
-            masterBundleId: fileState.masterBundleId,
+            name: fileState.name,
+            directory: fileState.directory,
             lastModified: fileState.lastModified || new Date().toISOString(),
+            isChanged: Boolean(fileState.isChanged),
             isStaged: Boolean(fileState.isStaged),
+            masterBundleId: fileState.masterBundleId,
+            tags: Array.isArray(fileState.tags) ? fileState.tags : [],
           },
         ])
       ),
-      tags: state.tags || {},
       masterBundle: state.masterBundle || null,
     }
 
     const writable = await handle.createWritable()
-
-    // Pretty print the JSON with proper escaping
     const jsonContent = JSON.stringify(sanitizedState, null, 2)
     await writable.write(jsonContent)
     await writable.close()
@@ -103,7 +110,7 @@ export async function saveState(
     // Attempt to recover by recreating the state file
     try {
       const stateDir = await rufasDir.getDirectoryHandle('state')
-      const handle = await stateDir.getFileHandle('file-status.json', {
+      const handle = await stateDir.getFileHandle('file.json', {
         create: true,
       })
       const writable = await handle.createWritable()
@@ -148,18 +155,20 @@ export async function createBundleFile(
     const timestamp = new Date().toISOString()
     const bundlesDir = await rufasDir.getDirectoryHandle('bundles')
 
-    const bundleContent = files
-      .map(
-        (file) =>
-          `<document>\n<source>${file.path}</source>\n<content>${file.content}</content>\n</document>`
-      )
-      .join('\n\n')
+    // Update to use handle to read content
+    const bundleContent = await Promise.all(
+      files.map(async (file) => {
+        const fileContent =
+          (await file.handle?.getFile().then((f) => f.text())) || ''
+        return `<document>\n<source>${file.path}</source>\n<content>${fileContent}</content>\n</document>`
+      })
+    )
 
     const bundleHandle = await bundlesDir.getFileHandle(`${bundleId}.txt`, {
       create: true,
     })
     const writable = await bundleHandle.createWritable()
-    await writable.write(bundleContent)
+    await writable.write(bundleContent.join('\n\n'))
     await writable.close()
 
     const manifest: BundleManifest = {
@@ -177,8 +186,13 @@ export async function createBundleFile(
     files.forEach((file) => {
       if (!state.files[file.path]) {
         state.files[file.path] = {
+          name: file.name,
+          directory: file.directory,
           lastModified: file.lastModified.toISOString(),
+          isChanged: false,
           isStaged: false,
+          masterBundleId: undefined,
+          tags: [],
         }
       }
       state.files[file.path].isStaged = false

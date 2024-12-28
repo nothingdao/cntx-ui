@@ -4,20 +4,20 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { Loader2, AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { FileSystemDirectoryHandle } from "@/types/filesystem"
-import { initializeProject, loadBundleIgnore } from '../utils/project-utils'
+import { Loader2, AlertCircle, Info } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import type { FileSystemDirectoryHandle } from "@/types/types"
+import { initializeProject } from '../utils/project-utils'
+import { Card, CardContent } from "@/components/ui/card"
 
 interface InitializationModalProps {
   isOpen: boolean;
   onComplete: () => void;
   dirHandle: FileSystemDirectoryHandle;
-  processDirectory: (dirHandle: FileSystemDirectoryHandle, relativePath?: string) => Promise<void>;
-  setIgnorePatterns: (patterns: string[]) => void;
 }
 
 type Status = 'idle' | 'loading' | 'error' | 'success';
@@ -26,8 +26,6 @@ export function InitializationModal({
   isOpen,
   onComplete,
   dirHandle,
-  processDirectory,
-  setIgnorePatterns,
 }: InitializationModalProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string>('');
@@ -35,31 +33,26 @@ export function InitializationModal({
   const handleInitConfig = async () => {
     setStatus('loading');
     setError('');
+
     try {
-      // Initialize and get the .rufas directory
-      const { rufasDir: newSourceryDir } = await initializeProject(dirHandle);
-
-      // Load ignore patterns
-      const patterns = await loadBundleIgnore(newSourceryDir);
-      setIgnorePatterns(patterns);
-
-      // Process the directory to populate watchedFiles
-      await processDirectory(dirHandle);
-
+      await initializeProject(dirHandle);
       setStatus('success');
-      onComplete();
+      // Note: Not calling onComplete here anymore
     } catch (error) {
       console.error('Failed to initialize project:', error);
-      setError('Failed to initialize project configuration.');
+      setError(error instanceof Error ? error.message : 'Failed to initialize project configuration.');
       setStatus('error');
     }
   };
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Project Initialization</DialogTitle>
+          <DialogDescription>
+            Initialize this directory with Rufas to track file changes and create bundles.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -70,11 +63,26 @@ export function InitializationModal({
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <h4 className="font-medium">Initialize Project</h4>
-            <p className="text-sm text-gray-500">
-              Creates a .rufas directory in the root of your project with default configuration files and file tracking data.
-            </p>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">What This Will Do</h4>
+              <Card className="bg-muted">
+                <CardContent className="p-4 space-y-2 text-sm">
+                  <p>• Creates a <code className="text-xs">.rufas</code> directory in your project root</p>
+                  <p>• Sets up initial configuration and state tracking</p>
+                  <p>• Configures default file ignore patterns</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Important Note About Ignore Patterns</AlertTitle>
+              <AlertDescription className="mt-2 text-sm">
+                Default ignore patterns (node_modules, .git, etc.) will be configured, but your project may have additional directories that should be ignored (like .next, .output, etc.). You can update these patterns in the Config tab after initialization to prevent performance issues with large directories.
+              </AlertDescription>
+            </Alert>
+
             <Button
               onClick={handleInitConfig}
               disabled={status === 'loading'}
@@ -88,12 +96,34 @@ export function InitializationModal({
             </Button>
           </div>
 
-          {status === 'success' && (
-            <div className="rounded-md bg-green-50 p-4">
-              <p className="text-sm text-green-800">
-                Project initialization complete! You can now start tracking file changes.
-              </p>
+          {status === 'success' ? (
+            <div className="space-y-4">
+              <Alert variant="default" className="border-green-600 bg-green-50 dark:bg-green-900/20">
+                <AlertTitle className="text-green-800 dark:text-green-200">Initialization Complete</AlertTitle>
+                <AlertDescription className="text-green-700 dark:text-green-300">
+                  Project setup is complete. Remember to check the Config tab if you need to customize ignore patterns for your project.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={onComplete}
+                className="w-full"
+                variant="default"
+              >
+                Begin Using Rufas
+              </Button>
             </div>
+          ) : (
+            <Button
+              onClick={handleInitConfig}
+              disabled={status === 'loading'}
+              className="w-full"
+              variant="default"
+            >
+              {status === 'loading' && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Initialize Project
+            </Button>
           )}
         </div>
       </DialogContent>

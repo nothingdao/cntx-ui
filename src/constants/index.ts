@@ -2,6 +2,7 @@
 
 export const DEFAULT_BUNDLE_IGNORE = [
   // Directories
+  'shitbird',
   'node_modules',
   '.git',
   'dist',
@@ -52,6 +53,10 @@ export const DEFAULT_TAGS: Record<
   string,
   { color: string; description: string }
 > = {
+  shitbird: {
+    color: '#0ea5e9', // sky-300
+    description: 'New shitbird enhancements',
+  },
   feature: {
     color: '#0ea5e9', // sky-500
     description: 'New features and enhancements',

@@ -1,10 +1,12 @@
 // src/components/MasterBundlePanel.tsx
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { useDirectoryWatcher } from '../hooks/useDirectoryWatcher';
-import { HistoryIcon, AlertCircle } from 'lucide-react';
+import { HistoryIcon, SquareDot } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BundleManifest } from '@/types/bundle';
+import { BundleManifest } from '@/types/types';
+import { useDirectory } from '@/contexts/DirectoryContext';
+import { useFiles } from '@/contexts/FileContext';
+import { useBundles } from '@/contexts/BundleContext';
 
 type MasterBundleStatus = {
   exists: boolean;
@@ -14,21 +16,19 @@ type MasterBundleStatus = {
 };
 
 export function MasterBundlePanel() {
-  const {
-    watchedFiles,
-    rufasDir,
-    isWatching,
-    createMasterBundle
-  } = useDirectoryWatcher();
+  const { directoryHandle, isWatching } = useDirectory();
+  const { watchedFiles } = useFiles();
+  const { createMasterBundle } = useBundles();
 
   const [status, setStatus] = useState<MasterBundleStatus>({ exists: false });
   const [isCreating, setIsCreating] = useState(false);
 
   const loadMasterBundleStatus = useCallback(async () => {
-    if (!rufasDir) return;
+    if (!directoryHandle) return;
 
     try {
       // Look directly in the master bundles directory
+      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
       const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
       const masterDir = await bundlesDir.getDirectoryHandle('master');
 
@@ -67,13 +67,13 @@ export function MasterBundlePanel() {
       console.error('Error loading master bundle status:', error);
       setStatus({ exists: false });
     }
-  }, [rufasDir, watchedFiles]);
+  }, [directoryHandle, watchedFiles]);
 
   useEffect(() => {
-    if (isWatching && rufasDir) {
+    if (isWatching && directoryHandle) {
       loadMasterBundleStatus();
     }
-  }, [isWatching, rufasDir, loadMasterBundleStatus]);
+  }, [isWatching, directoryHandle, loadMasterBundleStatus]);
 
   const handleCreateMasterBundle = async () => {
     setIsCreating(true);
@@ -97,7 +97,7 @@ export function MasterBundlePanel() {
           <span>Master Bundle</span>
         </CardTitle>
         <CardDescription>
-          Project-wide snapshot of all non-ignored files
+          Project-wide snapshot
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -112,8 +112,8 @@ export function MasterBundlePanel() {
                   Files included: {status.fileCount}
                 </div>
                 {status.modifiedFileCount !== undefined && status.modifiedFileCount > 0 && (
-                  <div className="flex items-center space-x-2 text-amber-500">
-                    <AlertCircle className="h-4 w-4" />
+                  <div className="flex items-center space-x-2">
+                    <SquareDot strokeWidth={0.5} />
                     <span className="text-sm">
                       {status.modifiedFileCount} files modified since creation
                     </span>

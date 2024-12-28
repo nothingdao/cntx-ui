@@ -1,36 +1,45 @@
 // src/utils/project-utils.ts
-// nice
 import { DEFAULT_BUNDLE_IGNORE, DEFAULT_TAGS } from '../constants'
-import type { WatchedFile, WatchState } from '../types/watcher'
-import type { FileSystemDirectoryHandle } from '../types/filesystem'
-import { TagsConfig } from '@/types/tags'
+import type {
+  WatchedFile,
+  WatchState,
+  FileSystemDirectoryHandle,
+  TagsConfig,
+  BundleManifest,
+} from '../types/types'
 import { loadState, saveState, saveBundleManifest } from './file-state'
-import { BundleManifest } from '@/types/bundle'
+import { processDirectory } from './file-utils'
 
-/**
- * Creates the initial .rufas directory structure and configuration
- * This is called once when a project is first set up
- */
 export async function initializeProject(dirHandle: FileSystemDirectoryHandle) {
   try {
-    // Create .rufas directory
+    console.log('Starting initialization...')
+    // Create .rufas directory first
     const rufasDir = await dirHandle.getDirectoryHandle('.rufas', {
       create: true,
     })
 
+    console.log('Creating directory structure...')
     // Create directory structure
     await createDirectoryStructure(rufasDir)
 
+    console.log('Creating initial configuration...')
     // Create initial configuration
     await createInitialConfig(rufasDir)
 
-    // Initialize state file
-    await initializeStateFile(rufasDir)
+    console.log('Scanning directory...')
+    // Now process directory AFTER we've created all the necessary structure
+    await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay to ensure FS is ready
+    const initialFiles = await processDirectory(dirHandle)
 
+    console.log(`Found ${initialFiles.length} files, creating state...`)
+    // Initialize state file with processed files
+    await initializeStateFile(rufasDir, initialFiles)
+
+    console.log('Initialization complete')
     return { rufasDir }
   } catch (error) {
     console.error('Error initializing project:', error)
-    throw new Error('Failed to initialize project: ' + (error as Error).message)
+    throw error
   }
 }
 
@@ -69,18 +78,33 @@ export default ${JSON.stringify(DEFAULT_TAGS, null, 2)} as const;
   await tagsWritable.close()
 }
 
-async function initializeStateFile(rufasDir: FileSystemDirectoryHandle) {
+async function initializeStateFile(
+  rufasDir: FileSystemDirectoryHandle,
+  initialFiles: WatchedFile[]
+) {
   const stateDir = await rufasDir.getDirectoryHandle('state', { create: true })
 
-  // Create with new structure
+  // Create initial state with processed files
   const initialState: WatchState = {
     lastAccessed: new Date().toISOString(),
-    files: {},
-    tags: {},
+    files: Object.fromEntries(
+      initialFiles.map((file) => [
+        file.path,
+        {
+          name: file.name,
+          directory: file.directory,
+          lastModified: file.lastModified.toISOString(),
+          isChanged: false,
+          isStaged: false,
+          masterBundleId: undefined,
+          tags: [],
+        },
+      ])
+    ),
     masterBundle: null,
   }
 
-  const stateHandle = await stateDir.getFileHandle('file-status.json', {
+  const stateHandle = await stateDir.getFileHandle('file.json', {
     create: true,
   })
   const writable = await stateHandle.createWritable()
@@ -88,10 +112,6 @@ async function initializeStateFile(rufasDir: FileSystemDirectoryHandle) {
   await writable.close()
 }
 
-/**
- * Creates an master bundle of all project files
- * This is typically called right after project initialization
- */
 export async function createMasterBundle(
   files: WatchedFile[],
   rufasDir: FileSystemDirectoryHandle
@@ -106,19 +126,20 @@ export async function createMasterBundle(
     const masterDir = await bundlesDir.getDirectoryHandle('master')
 
     // Create bundle content
-    const bundleContent = files
-      .map(
-        (file) =>
-          `<document>\n<source>${file.path}</source>\n<content>${file.content}</content>\n</document>`
-      )
-      .join('\n\n')
+    const bundleContent = files.map(async (file) => {
+      const fileContent =
+        (await file.handle?.getFile().then((f) => f.text())) || ''
+      return `<document>\n<source>${file.path}</source>\n<content>${fileContent}</content>\n</document>`
+    })
+    const resolvedContent = await Promise.all(bundleContent)
+    const finalContent = resolvedContent.join('\n\n')
 
     // Save the bundle
     const bundleHandle = await masterDir.getFileHandle(`${bundleId}.txt`, {
       create: true,
     })
     const writable = await bundleHandle.createWritable()
-    await writable.write(bundleContent)
+    await writable.write(finalContent)
     await writable.close()
 
     // Create and save manifest
@@ -133,29 +154,26 @@ export async function createMasterBundle(
     }
     await saveBundleManifest(bundlesDir, manifest, true)
 
-    // Update state with a fresh file state object
-    const updatedFiles = { ...state.files }
-
     // Update ALL files with their current state and masterBundleId
     files.forEach((file) => {
-      updatedFiles[file.path] = {
-        masterBundleId: bundleId,
+      state.files[file.path] = {
+        name: file.name,
+        directory: file.directory,
         lastModified: file.lastModified.toISOString(),
+        isChanged: false,
         isStaged: false,
+        masterBundleId: bundleId,
+        tags: file.tags,
       }
     })
 
-    const updatedState = {
-      ...state,
-      files: updatedFiles,
-      masterBundle: {
-        id: bundleId,
-        created: timestamp,
-        fileCount: files.length,
-      },
+    state.masterBundle = {
+      id: bundleId,
+      created: timestamp,
+      fileCount: files.length,
     }
 
-    await saveState(rufasDir, updatedState)
+    await saveState(rufasDir, state)
     return { success: true, bundleId }
   } catch (error) {
     console.error('Error creating master bundle:', error)
@@ -169,9 +187,6 @@ export async function createMasterBundle(
   }
 }
 
-/**
- * Loads the bundle ignore patterns from the project configuration
- */
 export async function loadBundleIgnore(
   rufasDir: FileSystemDirectoryHandle
 ): Promise<string[]> {
@@ -180,7 +195,6 @@ export async function loadBundleIgnore(
     const ignoreHandle = await configDir.getFileHandle('bundle-ignore.ts')
     const file = await ignoreHandle.getFile()
     const content = await file.text()
-    // console.log('Loading bundle ignore content:', content)
 
     const match = content.match(/\[([\s\S]*?)\]/)
     if (!match) {
@@ -193,7 +207,6 @@ export async function loadBundleIgnore(
       .map((item) => item.trim().replace(/["']/g, ''))
       .filter((item) => item.length > 0)
 
-    // console.log('Loaded ignore patterns:', arrayContent)
     return arrayContent
   } catch (error) {
     console.error('Error loading bundle ignore patterns:', error)
@@ -213,7 +226,6 @@ export async function saveTagsConfig(
     })
     const writable = await tagsHandle.createWritable()
 
-    // Preserve the export default format
     const content = `// .rufas/config/tags.ts
 export default ${JSON.stringify(tags, null, 2)} as const;
 `
@@ -234,15 +246,80 @@ export async function loadTagsConfig(
     const file = await tagsHandle.getFile()
     const content = await file.text()
 
-    // Extract the object part
     const match = content.match(/default\s*({[\s\S]*})\s*as const/)
     if (!match) return {}
 
-    // Clean and evaluate the content directly
     const obj = eval('(' + match[1] + ')')
     return obj
   } catch (error) {
     console.error('Error loading tags:', error)
     return {}
+  }
+}
+
+// Add these new functions to src/utils/project-utils.ts
+
+export async function savePatternIgnore(
+  rufasDir: FileSystemDirectoryHandle,
+  patterns: string[]
+): Promise<void> {
+  try {
+    const configDir = await rufasDir.getDirectoryHandle('config')
+    const content = `// .rufas/config/pattern-ignore.ts
+export default ${JSON.stringify(patterns, null, 2)} as const;
+`
+
+    const ignoreHandle = await configDir.getFileHandle('pattern-ignore.ts', {
+      create: true,
+    })
+    const writable = await ignoreHandle.createWritable()
+    await writable.write(content)
+    await writable.close()
+
+    // Try to remove the old file if it exists
+    try {
+      await configDir.removeEntry('bundle-ignore.ts')
+    } catch (error) {
+      // Ignore error if file doesn't exist
+    }
+  } catch (error) {
+    console.error('Error saving pattern ignore:', error)
+    throw error
+  }
+}
+
+export async function loadPatternIgnore(
+  rufasDir: FileSystemDirectoryHandle
+): Promise<string[]> {
+  try {
+    const configDir = await rufasDir.getDirectoryHandle('config')
+
+    // Prioritize pattern-ignore.ts over bundle-ignore.ts
+    try {
+      const ignoreHandle = await configDir.getFileHandle('pattern-ignore.ts')
+      const file = await ignoreHandle.getFile()
+      const content = await file.text()
+
+      const match = content.match(/\[([\s\S]*?)\]/)
+      if (match) {
+        const arrayContent = match[1]
+          .split(',')
+          .map((item) => item.trim().replace(/["']/g, ''))
+          .filter((item) => item.length > 0)
+
+        // If custom patterns exist, return them
+        if (arrayContent.length > 0) {
+          return arrayContent
+        }
+      }
+    } catch (customPatternError) {
+      // If custom pattern file doesn't exist, continue to next check
+    }
+
+    // Fallback to default patterns only if no custom patterns are found
+    return DEFAULT_BUNDLE_IGNORE
+  } catch (error) {
+    console.error('Error loading pattern ignore:', error)
+    return DEFAULT_BUNDLE_IGNORE
   }
 }

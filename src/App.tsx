@@ -1,20 +1,19 @@
 // src/App.tsx
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DirectoryWatcherProvider } from './contexts/DirectoryWatcherProvider';
+import { RufasProvider } from '@/contexts/RufasProvider';
 import { ApplicationContainer } from './components/ApplicationContainer';
-import { ThemeProvider } from "@/components/theme-provider"
-
+import { ThemeProvider } from "@/components/theme/theme-provider"
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <DirectoryWatcherProvider>
+      <RufasProvider>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           <ApplicationContainer />
         </ThemeProvider>
-      </DirectoryWatcherProvider>
+      </RufasProvider>
     </QueryClientProvider>
   );
 }

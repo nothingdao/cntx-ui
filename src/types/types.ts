@@ -1,0 +1,207 @@
+// src/types.ts
+
+/*
+███████╗██╗██╗     ███████╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗
+██╔════╝██║██║     ██╔════╝    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║
+█████╗  ██║██║     █████╗      ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║
+██╔══╝  ██║██║     ██╔══╝      ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║
+██║     ██║███████╗███████╗    ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║
+╚═╝     ╚═╝╚══════╝╚══════╝    ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝
+*/
+
+interface FileSystemHandle {
+  kind: 'file' | 'directory'
+  name: string
+  getFile(): Promise<File>
+}
+
+export interface FileSystemWritableFileStream extends WritableStream {
+  write(data: string | BufferSource | Blob): Promise<void>
+  seek(position: number): Promise<void>
+  truncate(size: number): Promise<void>
+}
+
+export interface FileSystemFileHandle extends FileSystemHandle {
+  kind: 'file'
+  getFile(): Promise<File>
+  createWritable(options?: {
+    keepExistingData?: boolean
+  }): Promise<FileSystemWritableFileStream>
+  isSameEntry(other: FileSystemHandle): Promise<boolean>
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+  keys(): AsyncIterableIterator<string>
+  values(): AsyncIterableIterator<FileSystemHandle>
+}
+
+export interface FileSystemDirectoryHandle extends FileSystemHandle {
+  kind: 'directory'
+  getDirectoryHandle(
+    name: string,
+    options?: { create?: boolean }
+  ): Promise<FileSystemDirectoryHandle>
+  getFileHandle(
+    name: string,
+    options?: { create?: boolean }
+  ): Promise<FileSystemFileHandle>
+  removeEntry(name: string, options?: { recursive?: boolean }): Promise<void>
+  resolve(possibleDescendant: FileSystemHandle): Promise<string[] | null>
+  [Symbol.asyncIterator](): AsyncIterableIterator<FileSystemHandle>
+  isSameEntry(other: FileSystemHandle): Promise<boolean>
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+  keys(): AsyncIterableIterator<string>
+  values(): AsyncIterableIterator<FileSystemHandle>
+}
+
+declare global {
+  interface Window {
+    showDirectoryPicker(options?: {
+      mode?: 'read' | 'readwrite'
+    }): Promise<FileSystemDirectoryHandle>
+  }
+}
+
+declare global {
+  type NativeFileSystemHandle = FileSystemHandle
+  type NativeFileSystemFileHandle = FileSystemFileHandle
+  type NativeFileSystemDirectoryHandle = FileSystemDirectoryHandle
+}
+
+/*
+██████╗ ██╗   ██╗███╗   ██╗██████╗ ██╗     ███████╗███████╗
+██╔══██╗██║   ██║████╗  ██║██╔══██╗██║     ██╔════╝██╔════╝
+██████╔╝██║   ██║██╔██╗ ██║██║  ██║██║     █████╗  ███████╗
+██╔══██╗██║   ██║██║╚██╗██║██║  ██║██║     ██╔══╝  ╚════██║
+██████╔╝╚██████╔╝██║ ╚████║██████╔╝███████╗███████╗███████║
+╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚══════╝
+*/
+
+export interface BundleManifest {
+  id: string
+  created: string
+  fileCount: number
+  files: {
+    path: string
+    lastModified: string
+  }[]
+}
+
+export interface Bundle {
+  name: string
+  timestamp: Date
+  fileCount: number
+}
+
+export interface FileState {
+  masterBundleId?: string
+  lastModified: string
+  isStaged: boolean
+}
+
+/*
+████████╗ █████╗  ██████╗ ███████╗
+╚══██╔══╝██╔══██╗██╔════╝ ██╔════╝
+   ██║   ███████║██║  ███╗███████╗
+   ██║   ██╔══██║██║   ██║╚════██║
+   ██║   ██║  ██║╚██████╔╝███████║
+   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+*/
+
+export type TagsConfig = {
+  [tagName: string]: {
+    color?: string
+    description?: string
+  }
+}
+
+/*
+██╗    ██╗ █████╗ ████████╗ ██████╗██╗  ██╗███████╗██████╗ 
+██║    ██║██╔══██╗╚══██╔══╝██╔════╝██║  ██║██╔════╝██╔══██╗
+██║ █╗ ██║███████║   ██║   ██║     ███████║█████╗  ██████╔╝
+██║███╗██║██╔══██║   ██║   ██║     ██╔══██║██╔══╝  ██╔══██╗
+╚███╔███╔╝██║  ██║   ██║   ╚██████╗██║  ██║███████╗██║  ██║
+ ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+*/
+//
+export interface WatchedFile {
+  path: string
+  name: string
+  directory: string
+  lastModified: Date
+  isChanged: boolean
+  isStaged: boolean
+  masterBundleId?: string
+  handle?: FileSystemFileHandle
+  tags: string[]
+}
+
+export interface WatchState {
+  lastAccessed: string
+  files: {
+    [path: string]: {
+      name: string
+      directory: string
+      lastModified: string
+      isChanged: boolean
+      isStaged: boolean
+      masterBundleId?: string
+      tags: string[]
+    }
+  }
+  masterBundle: {
+    id: string
+    created: string
+    fileCount: number
+  } | null
+}
+
+export type DirectoryWatcherContextType = {
+  watchedFiles: WatchedFile[]
+  stagedFiles: WatchedFile[]
+  selectDirectory: () => Promise<void>
+  refreshFiles: () => Promise<void>
+  isWatching: boolean
+  createBundle: () => Promise<string>
+  toggleStaged: (paths: string[]) => void
+  bundles: Bundle[]
+  loadBundles: () => Promise<void>
+  currentDirectory: string | null
+  createMasterBundle: () => Promise<void>
+  rufasDir: FileSystemDirectoryHandle | null
+  tags: TagsConfig
+  addTag: (name: string, color: string, description: string) => void
+  deleteTag: (name: string) => void
+  updateTag: (name: string, color: string, description: string) => void
+  addTagToFiles: (tag: string, paths: string[]) => Promise<void>
+  removeTagFromFiles: (tag: string, paths: string[]) => Promise<void>
+  getFilesWithTag: (tag: string) => WatchedFile[]
+  getTagsForFile: (path: string) => string[]
+}
+
+/*
+ ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗ 
+██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝ 
+██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗
+██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║
+╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
+ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝ 
+*/
+
+export type WatchConfig = {
+  ignore: string[] // Patterns to ignore
+  include?: string[] // Optional patterns to include
+}
+
+export const DEFAULT_CONFIG: WatchConfig = {
+  ignore: [
+    'node_modules',
+    'dist',
+    '.git',
+    'build',
+    'coverage',
+    '.next',
+    '.cache',
+    'package-lock.json',
+    'yarn.lock',
+  ],
+  include: ['*.ts', '*.tsx', '*.js', '*.jsx', '*.md', '*.json'],
+}

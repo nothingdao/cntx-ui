@@ -1,39 +1,78 @@
-import { useState, useRef, useEffect } from 'react';
+// src/components/DirectoryTree.tsx
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileIcon, SquareDot } from 'lucide-react';
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import type { WatchedFile } from '@/contexts/DirectoryWatcherContext';
+import type { WatchedFile } from '@/types/types';
 import { getAllDirectories } from '../utils/file-utils';
-import { useDirectoryWatcher } from '@/hooks/useDirectoryWatcher';
-import { BundleManifest } from '@/types/bundle';
+import { useDirectory } from '@/contexts/DirectoryContext';
+import { useBundles } from '@/contexts/BundleContext';
+import { BundleManifest } from '@/types/types';
 import { FileTagsDisplay } from './FileTagsDisplay';
+import { useProjectConfig } from '@/contexts/ProjectConfigContext';
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 type DirectoryTreeProps = {
   files: WatchedFile[];
   onToggleStage: (paths: string[]) => void;
 };
 
-type TreeItem = JSX.Element;
+// Build a flat index of files in display order
+function buildFileIndex(
+  files: WatchedFile[],
+  expandedDirs: Set<string>
+): WatchedFile[] {
+  const result: WatchedFile[] = [];
+  const directories = getAllDirectories(files.map(f => f.path))
+    .filter(dir => dir !== 'Root');
+
+  function processDirectory(currentDir: string = 'Root') {
+    // Add files in current directory
+    const dirFiles = files
+      .filter(f => f.directory === currentDir)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    result.push(...dirFiles);
+
+    // Process subdirectories if expanded
+    const childDirs = directories
+      .filter(dir => {
+        const parts = dir.split('/');
+        const parentParts = currentDir === 'Root' ? [] : currentDir.split('/');
+        return parts.length === parentParts.length + 1 &&
+          dir.startsWith(currentDir === 'Root' ? '' : currentDir + '/');
+      })
+      .sort((a, b) => a.localeCompare(b));
+
+    childDirs.forEach(dir => {
+      if (expandedDirs.has(dir)) {
+        processDirectory(dir);
+      }
+    });
+  }
+
+  processDirectory();
+  return result;
+}
 
 function FileRow({
   file,
   onCheckboxClick,
   depth = 0,
-  manifest
+  isSelected,
 }: {
   file: WatchedFile;
   onCheckboxClick: (event: React.MouseEvent) => void;
   depth?: number;
-  manifest: BundleManifest | null;
+  isSelected?: boolean;
 }) {
-  const manifestFile = manifest?.files.find(f => f.path === file.path);
-  const isModifiedSinceMaster = manifestFile &&
-    new Date(file.lastModified) > new Date(manifestFile.lastModified);
-
   return (
     <div className="space-y-1">
-      <div className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded-md"
-        style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
+      <div
+        className={`flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded-md ${isSelected ? 'bg-muted/50' : ''
+          }`}
+        style={{ paddingLeft: `${(depth + 1) * 12}px` }}
+      >
         <Checkbox
           checked={file.isStaged}
           onCheckedChange={() => { }}
@@ -44,11 +83,13 @@ function FileRow({
         <span className="flex-1 truncate text-sm">
           {file.name}
         </span>
-        {isModifiedSinceMaster && (
-          <SquareDot size={16} className="text-primary" />
+        {file.isChanged && (
+          <SquareDot
+            className="text-red-400"
+            size={16}
+            strokeWidth={1.5}
+          />
         )}
-      </div>
-      <div style={{ paddingLeft: `${(depth + 2) * 12}px` }}>
         <FileTagsDisplay filePath={file.path} />
       </div>
     </div>
@@ -58,37 +99,33 @@ function FileRow({
 export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(['Root']));
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [manifest, setManifest] = useState<BundleManifest | null>(null);
-  const visibleFilesRef = useRef<string[]>([]);
-  const { rufasDir } = useDirectoryWatcher();
+  const [rangeSelectionState, setRangeSelectionState] = useState<boolean | null>(null);
 
-  // Load the latest master bundle manifest
+  const { directoryHandle } = useDirectory();
+  const { masterBundle } = useBundles();
+  const { isProjectInitialized } = useProjectConfig();
+
+  // Load manifest when masterBundle changes
   useEffect(() => {
     const loadManifest = async () => {
-      if (!rufasDir) return;
+      if (!directoryHandle || !masterBundle || !isProjectInitialized) return;
 
       try {
-        const bundlesDir = await rufasDir.getDirectoryHandle('bundles');
-        const masterDir = await bundlesDir.getDirectoryHandle('master');
+        const bundlesDir = await directoryHandle.getDirectoryHandle('.rufas')
+          .then(dir => dir.getDirectoryHandle('bundles'))
+          .then(dir => dir.getDirectoryHandle('master'));
 
-        // Get all manifests and find the latest one
-        const manifests = [];
-        for await (const entry of masterDir.values()) {
-          if (entry.kind === 'file' && entry.name.endsWith('-manifest.json')) {
-            manifests.push(entry);
+        for await (const entry of bundlesDir.values()) {
+          if (entry.kind === 'file' &&
+            entry.name === `${masterBundle.name}-manifest.json`) {
+            const manifestFile = await entry.getFile();
+            const manifestContent = await manifestFile.text();
+            setManifest(JSON.parse(manifestContent));
+            break;
           }
         }
-
-        if (manifests.length === 0) {
-          setManifest(null);
-          return;
-        }
-
-        // Get the latest manifest
-        const latestManifest = manifests.sort((a, b) => b.name.localeCompare(a.name))[0];
-        const manifestFile = await latestManifest.getFile();
-        const manifestContent = await manifestFile.text();
-        setManifest(JSON.parse(manifestContent));
       } catch (error) {
         console.error('Error loading master bundle manifest:', error);
         setManifest(null);
@@ -96,55 +133,116 @@ export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
     };
 
     loadManifest();
-  }, [rufasDir]);
+  }, [directoryHandle, masterBundle, isProjectInitialized]);
 
-  // Get all directories except Root
-  const directories = getAllDirectories(files.map(f => f.path))
-    .filter(dir => dir !== 'Root');
+  // Get all directories once for the component
+  const directories = useMemo(() =>
+    getAllDirectories(files.map(f => f.path))
+      .filter(dir => dir !== 'Root')
+    , [files]);
 
-  const toggleDirectory = (dir: string) => {
-    const newExpanded = new Set(expandedDirs);
-    if (newExpanded.has(dir)) {
-      newExpanded.delete(dir);
-    } else {
-      newExpanded.add(dir);
-    }
-    setExpandedDirs(newExpanded);
-  };
+  // Build and memoize the flat file index based on current expanded state
+  const flatFileIndex = useMemo(() =>
+    buildFileIndex(files, expandedDirs),
+    [files, expandedDirs]
+  );
 
-  const handleCheckboxClick = (path: string, event: React.MouseEvent) => {
+  const toggleDirectory = useCallback((dir: string) => {
+    setExpandedDirs(prev => {
+      const next = new Set(prev);
+      if (next.has(dir)) {
+        next.delete(dir);
+      } else {
+        next.add(dir);
+      }
+      return next;
+    });
+  }, []);
+
+  const expandAll = useCallback(() => {
+    const allDirs = getAllDirectories(files.map(f => f.path));
+    setExpandedDirs(new Set(allDirs));
+  }, [files]);
+
+  const collapseAll = useCallback(() => {
+    setExpandedDirs(new Set(['Root']));
+  }, []);
+
+  const handleCheckboxClick = useCallback((path: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    const currentFile = files.find(f => f.path === path);
+    if (!currentFile) return;
+
     if (event.shiftKey && lastSelectedPath) {
-      const currentIndex = visibleFilesRef.current.indexOf(path);
-      const lastIndex = visibleFilesRef.current.indexOf(lastSelectedPath);
+      const currentIndex = flatFileIndex.findIndex(f => f.path === path);
+      const lastIndex = flatFileIndex.findIndex(f => f.path === lastSelectedPath);
 
       if (currentIndex !== -1 && lastIndex !== -1) {
         const start = Math.min(currentIndex, lastIndex);
         const end = Math.max(currentIndex, lastIndex);
-        const pathsToToggle = visibleFilesRef.current.slice(start, end + 1);
 
-        onToggleStage(pathsToToggle);
+        // Get paths in range based on flat index
+        const pathsToToggle = flatFileIndex
+          .slice(start, end + 1)
+          .map(f => f.path);
+
+        setSelectedItems(new Set(pathsToToggle));
+
+        // Use the stored range selection state
+        if (rangeSelectionState !== null) {
+          const filesToToggle = pathsToToggle.filter(p => {
+            const f = files.find(file => file.path === p);
+            return f && f.isStaged !== rangeSelectionState;
+          });
+          if (filesToToggle.length > 0) {
+            onToggleStage(filesToToggle);
+          }
+        }
       }
     } else {
+      // Single selection - store the target state for future range selections
+      setRangeSelectionState(!currentFile.isStaged);
+      setSelectedItems(new Set([path]));
       onToggleStage([path]);
     }
 
     setLastSelectedPath(path);
-  };
+  }, [lastSelectedPath, onToggleStage, flatFileIndex, files, rangeSelectionState]);
 
-  const renderTreeItems = (parentDir: string = 'Root', depth: number = 0): TreeItem[] => {
-    const allItems: TreeItem[] = [];
+  const renderTreeItems = useCallback((parentDir: string = 'Root', depth: number = 0): JSX.Element[] => {
+    const allItems: JSX.Element[] = [];
 
-    if (parentDir === 'Root') {
-      visibleFilesRef.current = [];
-    }
+    // Add files for current directory
+    const dirFiles = files
+      .filter(f => f.directory === parentDir)
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-    // Get and render directories first
-    const childDirs = directories.filter((dir: string) => {
-      const parts = dir.split('/');
-      const parentParts = parentDir === 'Root' ? [] : parentDir.split('/');
-      return parts.length === parentParts.length + 1 &&
-        dir.startsWith(parentDir === 'Root' ? '' : parentDir + '/');
+    dirFiles.forEach((file) => {
+      allItems.push(
+        <FileRow
+          key={file.path}
+          file={file}
+          onCheckboxClick={(event) => handleCheckboxClick(file.path, event)}
+          depth={depth}
+          isSelected={selectedItems.has(file.path)}
+          manifest={manifest}
+        />
+      );
     });
+
+    // Get immediate child directories only
+    const childDirs = directories
+      .filter(dir => {
+        if (parentDir === 'Root') {
+          return !dir.includes('/'); // Top-level dirs have no slashes
+        }
+        const parentParts = parentDir.split('/');
+        const dirParts = dir.split('/');
+        return dirParts.length === parentParts.length + 1 &&
+          dir.startsWith(parentDir + '/');
+      })
+      .sort((a, b) => a.localeCompare(b));
 
     // Add directories
     childDirs.forEach((dir) => {
@@ -183,29 +281,43 @@ export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
       );
     });
 
-    // Then add files
-    const dirFiles = files.filter(f => f.directory === parentDir);
-    dirFiles.forEach((file) => {
-      visibleFilesRef.current.push(file.path);
-      allItems.push(
-        <FileRow
-          key={file.path}
-          file={file}
-          onCheckboxClick={(event) => handleCheckboxClick(file.path, event)}
-          depth={depth}
-          manifest={manifest}
-        />
-      );
-    });
-
     return allItems;
-  };
+  }, [files, expandedDirs, handleCheckboxClick, selectedItems, toggleDirectory, manifest, directories]);
 
   return (
-    <div className="space-y-2">
-      <div className="space-y-0.5">
-        {renderTreeItems()}
-      </div>
+    <div className="flex flex-col space-y-2 h-full">
+      {isProjectInitialized ? (
+        <>
+          <div className="flex justify-between items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="px-2 py-1 h-8"
+              onClick={expandAll}
+            >
+              Expand All
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="px-2 py-1 h-8"
+              onClick={collapseAll}
+            >
+              Collapse All
+            </Button>
+          </div>
+          <div className="h-screen">
+            <ScrollArea className="h-3/5 w-full">
+              {renderTreeItems()}
+            </ScrollArea>
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          Project not initialized. Please initialize project first.
+        </div>
+      )}
     </div>
+
   );
 }

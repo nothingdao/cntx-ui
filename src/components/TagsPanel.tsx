@@ -1,7 +1,7 @@
+// src/components/TagsPanel.tsx
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDirectoryWatcher } from '@/hooks/useDirectoryWatcher';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Paintbrush, Pencil, Trash2, X, Check } from 'lucide-react';
@@ -15,6 +15,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { useTags } from '@/contexts/TagContext';
 
 export function TagsPanel() {
   const [newTag, setNewTag] = useState('');
@@ -25,14 +26,18 @@ export function TagsPanel() {
   const [editDescription, setEditDescription] = useState('');
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
 
-  const { tags, addTag, deleteTag, updateTag } = useDirectoryWatcher();
+  const { tags, addTag, deleteTag, updateTag } = useTags();
 
-  const handleAddTag = () => {
+  const handleAddTag = async () => {
     if (newTag.trim()) {
-      addTag(newTag.trim(), newTagColor, newTagDescription);
-      setNewTag('');
-      setNewTagDescription('');
-      setNewTagColor('#94a3b8');
+      try {
+        await addTag(newTag.trim(), newTagColor, newTagDescription);
+        setNewTag('');
+        setNewTagDescription('');
+        setNewTagColor('#94a3b8');
+      } catch (error) {
+        console.error('Error adding tag:', error);
+      }
     }
   };
 
