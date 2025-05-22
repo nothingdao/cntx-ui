@@ -12,11 +12,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nothingdao/cntx.git"
+    "url": "git+https://github.com/nothingdao/cntx-ui.git"
   },
-  "homepage": "https://github.com/nothingdao/cntx#readme",
+  "homepage": "https://github.com/nothingdao/cntx-ui#readme",
   "bugs": {
-    "url": "https://github.com/nothingdao/cntx/issues"
+    "url": "https://github.com/nothingdao/cntx-ui/issues"
   },
   "author": "whaleen",
   "license": "MIT",
