@@ -82,6 +82,7 @@ export interface BundleManifest {
   files: {
     path: string
     lastModified: string
+    tags?: string[] // Add tags to the file entries
   }[]
 }
 
@@ -89,6 +90,7 @@ export interface Bundle {
   name: string
   timestamp: Date
   fileCount: number
+  tagCount?: number
 }
 
 export interface FileState {
@@ -166,7 +168,7 @@ export type DirectoryWatcherContextType = {
   loadBundles: () => Promise<void>
   currentDirectory: string | null
   createMasterBundle: () => Promise<void>
-  rufasDir: FileSystemDirectoryHandle | null
+  cntxDir: FileSystemDirectoryHandle | null
   tags: TagsConfig
   addTag: (name: string, color: string, description: string) => void
   deleteTag: (name: string) => void

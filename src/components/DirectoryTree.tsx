@@ -113,7 +113,7 @@ export function DirectoryTree({ files, onToggleStage }: DirectoryTreeProps) {
       if (!directoryHandle || !masterBundle || !isProjectInitialized) return;
 
       try {
-        const bundlesDir = await directoryHandle.getDirectoryHandle('.rufas')
+        const bundlesDir = await directoryHandle.getDirectoryHandle('.cntx')
           .then(dir => dir.getDirectoryHandle('bundles'))
           .then(dir => dir.getDirectoryHandle('master'));
 

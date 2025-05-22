@@ -2,7 +2,6 @@
 
 export const DEFAULT_BUNDLE_IGNORE = [
   // Directories
-  'shitbird',
   'node_modules',
   '.git',
   'dist',
@@ -47,6 +46,7 @@ export const DEFAULT_BUNDLE_IGNORE = [
 
   // Other
   'example-project',
+  'issues',
 ]
 
 export const DEFAULT_TAGS: Record<

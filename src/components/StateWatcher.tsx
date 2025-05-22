@@ -174,16 +174,6 @@ export function StateWatcher() {
 
   return (
     <div className="p-4">
-      <div className="mb-4">
-        <h2 className="text-2xl font-semibold mb-2">State Watcher</h2>
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Monitoring application state changes in real-time. Use this component to verify state updates are propagating correctly.
-          </AlertDescription>
-        </Alert>
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-4">
           <RecentChangesSection />

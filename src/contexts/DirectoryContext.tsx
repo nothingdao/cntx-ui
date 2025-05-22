@@ -32,9 +32,9 @@ export function DirectoryProvider({ children }: { children: React.ReactNode }) {
   const watchDirectory = useCallback(async (handle: FileSystemDirectoryHandle) => {
     if (!handle) return;
 
-    // First verify .rufas exists before starting to watch
+    // First verify .cntx exists before starting to watch
     try {
-      await handle.getDirectoryHandle('.rufas', { create: false });
+      await handle.getDirectoryHandle('.cntx', { create: false });
     } catch (error) {
       console.log('Cannot start watching - directory not initialized');
       return;
@@ -113,8 +113,8 @@ export function DirectoryProvider({ children }: { children: React.ReactNode }) {
       setCurrentDirectory(handle.name);
 
       try {
-        // Check if .rufas exists without creating it
-        await handle.getDirectoryHandle('.rufas', { create: false });
+        // Check if .cntx exists without creating it
+        await handle.getDirectoryHandle('.cntx', { create: false });
         // Already initialized - safe to start watching
         watchDirectory(handle);
       } catch (error) {

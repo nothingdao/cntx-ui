@@ -28,6 +28,11 @@ export interface BundleContextType {
   bundles: Bundle[]
   masterBundle: Bundle | null
   createBundle: () => Promise<string>
+  updateBundle: (
+    bundleName: string,
+    filesToInclude: WatchedFile[],
+    filesToRemove?: string[]
+  ) => Promise<{ success: boolean; error?: string; bundleId?: string }>
   createMasterBundle: () => Promise<void>
   loadBundles: () => Promise<void>
 }

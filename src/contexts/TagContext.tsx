@@ -27,8 +27,8 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
       if (!directoryHandle || !isWatching) return;
 
       try {
-        const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
-        const existingTags = await loadTagsConfig(rufasDir);
+        const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+        const existingTags = await loadTagsConfig(cntxDir);
         setTags(existingTags);
       } catch (error) {
         console.error('Error loading tags:', error);
@@ -43,13 +43,13 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
     if (!directoryHandle) return;
 
     try {
-      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
       const newTags = {
         ...tags,
         [name]: { color, description }
       };
 
-      await saveTagsConfig(rufasDir, newTags);
+      await saveTagsConfig(cntxDir, newTags);
       setTags(newTags);
     } catch (error) {
       console.error('Error adding tag:', error);
@@ -60,18 +60,18 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
     if (!directoryHandle) return;
 
     try {
-      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
 
       // Remove tag from tags config
       const { [name]: _, ...remainingTags } = tags;
-      await saveTagsConfig(rufasDir, remainingTags);
+      await saveTagsConfig(cntxDir, remainingTags);
 
       // Remove tag from all files in state
-      const state = await loadState(rufasDir);
+      const state = await loadState(cntxDir);
       Object.keys(state.files).forEach(path => {
         state.files[path].tags = state.files[path].tags.filter(t => t !== name);
       });
-      await saveState(rufasDir, state);
+      await saveState(cntxDir, state);
 
       setTags(remainingTags);
     } catch (error) {
@@ -83,13 +83,13 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
     if (!directoryHandle) return;
 
     try {
-      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
       const updatedTags = {
         ...tags,
         [name]: { color, description }
       };
 
-      await saveTagsConfig(rufasDir, updatedTags);
+      await saveTagsConfig(cntxDir, updatedTags);
       setTags(updatedTags);
     } catch (error) {
       console.error('Error updating tag:', error);
@@ -104,8 +104,8 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
     if (!directoryHandle) return;
 
     try {
-      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
-      const state = await loadState(rufasDir);
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const state = await loadState(cntxDir);
 
       paths.forEach(path => {
         if (!state.files[path]) {
@@ -123,7 +123,7 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      await saveState(rufasDir, state);
+      await saveState(cntxDir, state);
     } catch (error) {
       console.error('Error adding tags to files:', error);
     }
@@ -133,8 +133,8 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
     if (!directoryHandle) return;
 
     try {
-      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
-      const state = await loadState(rufasDir);
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const state = await loadState(cntxDir);
 
       paths.forEach(path => {
         if (state.files[path]) {
@@ -142,7 +142,7 @@ export function TagProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      await saveState(rufasDir, state);
+      await saveState(cntxDir, state);
     } catch (error) {
       console.error('Error removing tags from files:', error);
     }

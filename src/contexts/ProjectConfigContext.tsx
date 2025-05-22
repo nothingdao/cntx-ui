@@ -3,7 +3,6 @@ import React, { createContext, useState, useCallback, useContext, useEffect } fr
 import type { ProjectConfigContextType } from './types';
 import { DEFAULT_BUNDLE_IGNORE } from '@/constants';
 import { initializeProject, loadPatternIgnore } from '@/utils/project-utils';
-
 import { useDirectory } from './DirectoryContext';
 import { useFiles } from './FileContext';
 
@@ -15,7 +14,7 @@ const ProjectConfigContext = createContext<ProjectConfigContextType>({
 });
 
 export function ProjectConfigProvider({ children }: { children: React.ReactNode }) {
-  const [ignorePatterns, setIgnorePatterns] = useState<string[]>(DEFAULT_BUNDLE_IGNORE);
+  const [ignorePatterns, setIgnorePatterns] = useState<string[]>([]);
   const [isProjectInitialized, setIsProjectInitialized] = useState(false);
   const { directoryHandle } = useDirectory();
   const { refreshFiles } = useFiles();  // Add this to trigger file refresh
@@ -30,12 +29,16 @@ export function ProjectConfigProvider({ children }: { children: React.ReactNode 
       }
 
       try {
-        const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
-        const patterns = await loadPatternIgnore(rufasDir);
+        const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+        console.log("Loading patterns from pattern-ignore.ts...");
+        const patterns = await loadPatternIgnore(cntxDir);
+        console.log("ProjectConfigContext - Loaded patterns:", patterns);
+
+        // Set the patterns in state
         setIgnorePatterns(patterns);
         setIsProjectInitialized(true);
       } catch (error) {
-        console.log('Project not initialized:', error);
+        console.error('Project not initialized or pattern file error:', error);
         setIsProjectInitialized(false);
       }
     };
@@ -47,17 +50,22 @@ export function ProjectConfigProvider({ children }: { children: React.ReactNode 
     if (!directoryHandle) return;
 
     try {
-      // Update state
+      // Update state immediately
       setIgnorePatterns(patterns);
+      console.log("Setting ignorePatterns state to:", patterns);
 
       // Get the config directory handle
-      const rufasDir = await directoryHandle.getDirectoryHandle('.rufas');
-      const configDir = await rufasDir.getDirectoryHandle('config');
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const configDir = await cntxDir.getDirectoryHandle('config');
 
-      // Create the content for pattern-ignore.ts
-      const content = `// .rufas/config/pattern-ignore.ts
-export default ${JSON.stringify(patterns, null, 2)} as const;
+      // Create a very simple format that's easy to parse
+      const content = `// .cntx/config/pattern-ignore.ts
+export default [
+  ${patterns.map(p => `'${p}'`).join(',\n  ')}
+] as const;
 `;
+
+      console.log("Writing pattern file with content:", content);
 
       // Write to file
       const ignoreHandle = await configDir.getFileHandle('pattern-ignore.ts', {
@@ -67,15 +75,12 @@ export default ${JSON.stringify(patterns, null, 2)} as const;
       await writable.write(content);
       await writable.close();
 
-      // After updating patterns, refresh files to apply new ignore rules
-      await refreshFiles();
-
+      // Force refresh files with the new patterns
+      setTimeout(() => refreshFiles(), 100);
     } catch (error) {
       console.error('Error updating ignore patterns:', error);
-      // Revert state on error
-      setIgnorePatterns(ignorePatterns);
     }
-  }, [directoryHandle, ignorePatterns, refreshFiles]);
+  }, [directoryHandle, refreshFiles]);
 
   const initProject = useCallback(async () => {
     if (!directoryHandle) {
@@ -83,10 +88,10 @@ export default ${JSON.stringify(patterns, null, 2)} as const;
     }
 
     try {
-      const { rufasDir } = await initializeProject(directoryHandle);
+      const { cntxDir } = await initializeProject(directoryHandle);
 
       // Load ignore patterns
-      const patterns = await loadPatternIgnore(rufasDir);
+      const patterns = await loadPatternIgnore(cntxDir);
       setIgnorePatterns(patterns);
 
       setIsProjectInitialized(true);

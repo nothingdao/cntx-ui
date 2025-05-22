@@ -51,7 +51,7 @@ export function InitializationModal({
         <DialogHeader>
           <DialogTitle>Project Initialization</DialogTitle>
           <DialogDescription>
-            Initialize this directory with Rufas to track file changes and create bundles.
+            Initialize this directory with Cntx to track file changes and create bundles.
           </DialogDescription>
         </DialogHeader>
 
@@ -68,7 +68,7 @@ export function InitializationModal({
               <h4 className="font-medium mb-2">What This Will Do</h4>
               <Card className="bg-muted">
                 <CardContent className="p-4 space-y-2 text-sm">
-                  <p>• Creates a <code className="text-xs">.rufas</code> directory in your project root</p>
+                  <p>• Creates a <code className="text-xs">.cntx</code> directory in your project root</p>
                   <p>• Sets up initial configuration and state tracking</p>
                   <p>• Configures default file ignore patterns</p>
                 </CardContent>
@@ -109,7 +109,7 @@ export function InitializationModal({
                 className="w-full"
                 variant="default"
               >
-                Begin Using Rufas
+                Begin Using Cntx
               </Button>
             </div>
           ) : (
