@@ -10,6 +10,14 @@
     "development-tools",
     "codebase"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nothingdao/cntx.git"
+  },
+  "homepage": "https://github.com/nothingdao/cntx#readme",
+  "bugs": {
+    "url": "https://github.com/nothingdao/cntx/issues"
+  },
   "author": "whaleen",
   "license": "MIT",
   "bin": {
