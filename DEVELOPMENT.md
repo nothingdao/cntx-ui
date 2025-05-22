@@ -14,7 +14,7 @@ This guide covers how to set up Cntx for local development, contribute to the pr
 ### Clone and Install
 
 ```bash
-git clone https://github.com/yourusername/cntx-ui.git
+git clone https://github.com/nothingdao/cntx-ui.git
 cd cntx-ui
 npm install
 ```
