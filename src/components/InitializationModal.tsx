@@ -51,7 +51,7 @@ export function InitializationModal({
         <DialogHeader>
           <DialogTitle>Project Initialization</DialogTitle>
           <DialogDescription>
-            Initialize this directory with Cntx to track file changes and create bundles.
+            Initialize this directory with Cntx to track file changes, manage tags, and create bundles for AI consumption.
           </DialogDescription>
         </DialogHeader>
 
@@ -83,7 +83,7 @@ export function InitializationModal({
               </AlertDescription>
             </Alert>
 
-            <Button
+            {/* <Button
               onClick={handleInitConfig}
               disabled={status === 'loading'}
               className="w-full"
@@ -93,7 +93,7 @@ export function InitializationModal({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Initialize Project
-            </Button>
+            </Button> */}
           </div>
 
           {status === 'success' ? (

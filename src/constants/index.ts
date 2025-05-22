@@ -53,48 +53,36 @@ export const DEFAULT_TAGS: Record<
   string,
   { color: string; description: string }
 > = {
-  shitbird: {
-    color: '#0ea5e9', // sky-300
-    description: 'New shitbird enhancements',
-  },
-  feature: {
+  application: {
     color: '#0ea5e9', // sky-500
-    description: 'New features and enhancements',
+    description: 'Main application code and logic',
   },
-  bug: {
-    color: '#ef4444', // red-500
-    description: 'Bug fixes and patches',
+  infrastructure: {
+    color: '#f97316', // orange-500
+    description: 'Deployment, CI/CD, infrastructure-as-code',
   },
-  docs: {
+  configuration: {
+    color: '#94a3b8', // slate-400
+    description: 'Build, tooling, and environment configuration',
+  },
+  documentation: {
     color: '#8b5cf6', // violet-500
-    description: 'Documentation and comments',
+    description: 'Documentation, markdown files, and comments',
   },
-  test: {
+  testing: {
     color: '#22c55e', // green-500
-    description: 'Test files and testing utilities',
+    description: 'Unit tests, integration tests, and mocks',
   },
-  core: {
-    color: '#f59e0b', // amber-500
-    description: 'Core application logic',
+  assets: {
+    color: '#78716c', // stone-500
+    description: 'Static files, images, media, and fonts',
   },
-  util: {
-    color: '#64748b', // slate-500
-    description: 'Utility functions and helpers',
-  },
-  component: {
+  libraries: {
     color: '#ec4899', // pink-500
-    description: 'UI Components',
+    description: 'Shared utilities, helper functions, and internal packages',
   },
-  type: {
+  types: {
     color: '#6366f1', // indigo-500
     description: 'Type definitions and interfaces',
-  },
-  config: {
-    color: '#94a3b8', // slate-400
-    description: 'Configuration files',
-  },
-  asset: {
-    color: '#78716c', // stone-500
-    description: 'Static assets and resources',
   },
 }

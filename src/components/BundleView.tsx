@@ -333,6 +333,10 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
               <FolderOpen className="h-4 w-4" />
               Tree
             </TabsTrigger>
+            <TabsTrigger value="raw" className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              Raw Content
+            </TabsTrigger>
           </TabsList>
 
           {/* Files Tab */}
@@ -711,6 +715,54 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
               </Card>
             </div>
           </TabsContent>
+
+          <TabsContent value="raw">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-medium">Bundle Raw Content</h3>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyContent}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={downloadBundle}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+
+              {content ? (
+                <Card>
+                  <CardContent className="p-0">
+                    <ScrollArea className="h-[600px] w-full">
+                      <pre className="text-xs font-mono whitespace-pre-wrap p-4 leading-relaxed">
+                        {content}
+                      </pre>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-8 w-8 mx-auto mb-2" />
+                  <p>No content available</p>
+                </div>
+              )}
+
+              <div className="text-xs text-muted-foreground">
+                Content length: {content?.length.toLocaleString() || 0} characters
+              </div>
+            </div>
+          </TabsContent>
+
         </Tabs>
       </CardContent>
       <CardFooter>

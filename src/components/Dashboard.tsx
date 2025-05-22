@@ -1,5 +1,5 @@
 // src/components/Dashboard.tsx
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDirectory } from '@/contexts/DirectoryContext';
 import { useFiles } from '@/contexts/FileContext';
 import { useBundles } from '@/contexts/BundleContext';
@@ -270,7 +270,7 @@ export function Dashboard() {
                 <Archive className="mr-2 h-5 w-5" />
                 Bundle Overview
               </span>
-              <MasterBundleButton />
+              {/* <MasterBundleButton /> */}
             </CardTitle>
           </CardHeader>
           <CardContent>

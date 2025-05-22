@@ -1,0 +1,33 @@
+# Source files
+src/
+public/
+docs/
+
+# Development files
+.vscode/
+.idea/
+*.log
+.env*
+.DS_Store
+
+# Build artifacts not needed in package
+node_modules/
+coverage/
+.nyc_output/
+
+# Development configs
+vite.config.ts
+tsconfig*.json
+eslint.config.js
+tailwind.config.js
+postcss.config.js
+
+# Git
+.git/
+.gitignore
+
+# Only include built files and essentials
+!dist/
+!bin/
+!README.md
+!package.json

@@ -54,7 +54,7 @@ async function createDirectoryStructure(cntxDir: FileSystemDirectoryHandle) {
   })
   // Explicitly create master directory with create: true
   await bundlesDir.getDirectoryHandle('master', { create: true })
-  await cntxDir.getDirectoryHandle('sent', { create: true })
+  // await cntxDir.getDirectoryHandle('sent', { create: true })
   await cntxDir.getDirectoryHandle('state', { create: true })
 }
 

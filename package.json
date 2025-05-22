@@ -1,13 +1,36 @@
 {
-  "name": "sourcery",
-  "private": true,
-  "version": "0.0.0",
+  "name": "cntx-ui",
   "type": "module",
+  "version": "1.0.0",
+  "description": "File bundling and tagging tool for AI development",
+  "keywords": [
+    "ai",
+    "bundling",
+    "file-management",
+    "development-tools",
+    "codebase"
+  ],
+  "author": "whaleen",
+  "license": "MIT",
+  "bin": {
+    "cntx": "./bin/cntx.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "build-with-types": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "npm run build",
+    "start": "node bin/cntx.js"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.4",
@@ -27,7 +50,9 @@
     "clsx": "^2.1.1",
     "console-feed": "^3.6.0",
     "dotenv": "^16.4.7",
+    "express": "^4.18.2",
     "lucide-react": "^0.469.0",
+    "open": "^8.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "simple-git": "^3.27.0",

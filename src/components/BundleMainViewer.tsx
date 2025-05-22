@@ -232,7 +232,7 @@ export function BundleMainViewer() {
                   <div>
                     <CardTitle className="text-base">{selectedBundle}</CardTitle>
                     <CardDescription className="text-sm">
-                      Bundle Details
+                      {/* Bundle Details */}
                     </CardDescription>
                   </div>
                 </div>

@@ -84,7 +84,7 @@ export function DirectoryPanel() {
         <ModeToggle />
       </div>
 
-      <div className="text-xs text-muted-foreground py-2">
+      <div className="text-xs text-muted-foreground pb-4">
         {isWatching ? 'Watching for changes...' : 'Select a directory to start watching'}
       </div>
 
