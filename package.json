@@ -21,7 +21,7 @@
   "author": "whaleen",
   "license": "MIT",
   "bin": {
-    "cntx-ui": "./bin/cntx.js"
+    "cntx-ui": "./bin/cntx.cjs"
   },
   "files": [
     "dist",
