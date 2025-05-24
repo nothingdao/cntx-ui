@@ -1,4 +1,4 @@
-// src/utils/project-utils.ts
+// src/utils/project-utils.ts - FIXED to preserve tags during master bundle creation
 import { DEFAULT_BUNDLE_IGNORE, DEFAULT_TAGS } from '../constants'
 import type {
   WatchedFile,
@@ -116,9 +116,9 @@ async function initializeStateFile(
   await writable.close()
 }
 
-// src/utils/project-utils.ts - Updated createMasterBundle function
-
+// CRITICAL FIX: Enhanced createMasterBundle function that preserves tags
 import { buildDirectoryTree, getFileExtension } from './directory-tree'
+import { ProjectMetadata } from '@/contexts/types'
 
 export async function createMasterBundle(
   files: WatchedFile[],
@@ -126,16 +126,23 @@ export async function createMasterBundle(
   ignorePatterns: string[] = []
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {
   try {
-    console.log('Starting master bundle creation...')
-    console.log('Applying ignore patterns:', ignorePatterns)
+    console.log('🔄 Starting master bundle creation with tag preservation...')
+    console.log('📋 Applying ignore patterns:', ignorePatterns)
 
-    const state = await loadState(cntxDir)
+    // CRITICAL: Load existing state WITHOUT filtering to preserve ALL tagged files
+    const state = await loadState(cntxDir, []) // Empty patterns = no filtering
+    console.log(
+      '📂 Loaded existing state for',
+      Object.keys(state.files).length,
+      'files'
+    )
+
     const bundleId = `master-${new Date().toISOString().replace(/[:.]/g, '-')}`
     const timestamp = new Date().toISOString()
 
-    // Filter files based on ignore patterns
+    // Filter files based on ignore patterns BUT preserve important tagged files
     const filteredFiles = files.filter((file) => {
-      return !ignorePatterns.some((pattern) => {
+      const isIgnored = ignorePatterns.some((pattern) => {
         if (pattern.startsWith('*.')) {
           const extension = pattern.slice(1)
           return file.path.toLowerCase().endsWith(extension.toLowerCase())
@@ -151,9 +158,40 @@ export async function createMasterBundle(
           normalizedPath.startsWith(`${normalizedPattern}/`)
         )
       })
+
+      // PRESERVE files that have tags, even if they match ignore patterns
+      const hasImportantTags = file.tags && file.tags.length > 0
+      const isStaged = file.isStaged
+      const hasBundleId = file.masterBundleId
+
+      if (isIgnored && (hasImportantTags || isStaged || hasBundleId)) {
+        console.log(
+          `🏷️  Preserving tagged/important file despite ignore pattern: ${
+            file.path
+          } [tags: ${file.tags?.join(', ') || 'none'}]`
+        )
+        return true // Keep it despite ignore pattern
+      }
+
+      return !isIgnored
     })
 
-    console.log(`Processing ${filteredFiles.length} files for master bundle...`)
+    console.log(
+      `📁 Processing ${filteredFiles.length} files for master bundle...`
+    )
+
+    // ENSURE we're using the most up-to-date tags from the state
+    const filesWithPreservedTags = filteredFiles.map((file) => {
+      const stateFile = state.files[file.path]
+      if (stateFile && stateFile.tags && stateFile.tags.length > 0) {
+        console.log(`🏷️  Preserving tags for ${file.path}:`, stateFile.tags)
+        return {
+          ...file,
+          tags: stateFile.tags, // Use tags from state
+        }
+      }
+      return file
+    })
 
     // Get the bundles directory
     const bundlesDir = await cntxDir.getDirectoryHandle('bundles', {
@@ -179,13 +217,13 @@ export async function createMasterBundle(
     // Build directory tree
     const projectName = 'project' // You could get this from directory name
     const { xmlTree, asciiTree } = buildDirectoryTree(
-      filteredFiles,
+      filesWithPreservedTags,
       projectName
     )
 
     // Create document content for each file
     const documentStrings = await Promise.all(
-      filteredFiles.map(async (file) => {
+      filesWithPreservedTags.map(async (file) => {
         try {
           if (!file.handle) {
             console.warn(`No file handle for ${file.path}`)
@@ -213,12 +251,12 @@ export async function createMasterBundle(
     // Create the complete bundle content with enhanced format
     const bundleContent = `<?xml version="1.0" encoding="UTF-8"?>
 <bundle id="${bundleId}" created="${timestamp}" fileCount="${
-      filteredFiles.length
+      filesWithPreservedTags.length
     }">
   
   <metadata>
     <projectName>${projectName}</projectName>
-    <totalFiles>${filteredFiles.length}</totalFiles>
+    <totalFiles>${filesWithPreservedTags.length}</totalFiles>
     <bundleType>master</bundleType>
     <ignorePatterns>
 ${ignorePatterns
@@ -241,7 +279,9 @@ ${documentStrings.join('\n\n')}
 
 </bundle>`
 
-    console.log(`Master bundle content created (${bundleContent.length} bytes)`)
+    console.log(
+      `📦 Master bundle content created (${bundleContent.length} bytes)`
+    )
 
     // Save the bundle to a file
     try {
@@ -251,7 +291,7 @@ ${documentStrings.join('\n\n')}
       const writable = await bundleHandle.createWritable()
       await writable.write(bundleContent)
       await writable.close()
-      console.log(`Master bundle file written: ${bundleId}.txt`)
+      console.log(`💾 Master bundle file written: ${bundleId}.txt`)
     } catch (error) {
       console.error('Error writing master bundle file:', error)
       return {
@@ -262,21 +302,21 @@ ${documentStrings.join('\n\n')}
       }
     }
 
-    // Create and save manifest (existing logic)
+    // Create and save manifest with preserved tags
     const manifest: BundleManifest = {
       id: bundleId,
       created: timestamp,
-      fileCount: filteredFiles.length,
-      files: filteredFiles.map((file) => ({
+      fileCount: filesWithPreservedTags.length,
+      files: filesWithPreservedTags.map((file) => ({
         path: file.path,
         lastModified: file.lastModified.toISOString(),
-        tags: file.tags || [],
+        tags: file.tags || [], // CRITICAL: Include tags in manifest
       })),
     }
 
     try {
       await saveBundleManifest(bundlesDir, manifest, true)
-      console.log('Master bundle manifest saved')
+      console.log('📋 Master bundle manifest saved with tags')
     } catch (error) {
       console.error('Error saving master bundle manifest:', error)
       return {
@@ -287,28 +327,44 @@ ${documentStrings.join('\n\n')}
       }
     }
 
-    // Update state (existing logic)
-    filteredFiles.forEach((file) => {
-      state.files[file.path] = {
-        name: file.name,
-        directory: file.directory,
-        lastModified: file.lastModified.toISOString(),
-        isChanged: false,
-        isStaged: false,
-        masterBundleId: bundleId,
-        tags: file.tags || [],
+    // CRITICAL: Update state while preserving ALL existing tags
+    filesWithPreservedTags.forEach((file) => {
+      const existingFileState = state.files[file.path]
+
+      if (existingFileState) {
+        // PRESERVE all existing data, especially tags
+        state.files[file.path] = {
+          ...existingFileState, // Keep everything from existing state
+          lastModified: file.lastModified.toISOString(),
+          isChanged: false, // Reset changed status after bundling
+          masterBundleId: bundleId,
+          // CRITICAL: Keep existing tags, don't overwrite
+          tags: existingFileState.tags || [],
+        }
+      } else {
+        // New file entry
+        state.files[file.path] = {
+          name: file.name,
+          directory: file.directory,
+          lastModified: file.lastModified.toISOString(),
+          isChanged: false,
+          isStaged: false,
+          masterBundleId: bundleId,
+          tags: file.tags || [],
+        }
       }
     })
 
     state.masterBundle = {
       id: bundleId,
       created: timestamp,
-      fileCount: filteredFiles.length,
+      fileCount: filesWithPreservedTags.length,
     }
 
     try {
-      await saveState(cntxDir, state)
-      console.log('State updated with master bundle info')
+      // CRITICAL: Save state without any filtering to preserve all tagged files
+      await saveState(cntxDir, state, []) // Empty patterns to preserve everything
+      console.log('✅ State updated with master bundle info and preserved tags')
     } catch (error) {
       console.error('Error saving state with master bundle info:', error)
       return {
@@ -319,10 +375,12 @@ ${documentStrings.join('\n\n')}
       }
     }
 
-    console.log('Master bundle creation completed successfully')
+    console.log(
+      '🎉 Master bundle creation completed successfully with tag preservation'
+    )
     return { success: true, bundleId }
   } catch (error) {
-    console.error('Error creating master bundle:', error)
+    console.error('❌ Error creating master bundle:', error)
     return {
       success: false,
       error:
@@ -334,7 +392,7 @@ ${documentStrings.join('\n\n')}
 }
 
 /**
- * Helper function to create document string with enhanced metadata
+ * Helper function to create document string with enhanced metadata including tags
  */
 function createDocumentString(file: WatchedFile, content: string): string {
   const tagsString =
@@ -393,45 +451,154 @@ export async function loadBundleIgnore(
   }
 }
 
+// Improved loadTagsConfig function for src/utils/project-utils.ts
+
+export async function loadTagsConfig(
+  cntxDir: FileSystemDirectoryHandle
+): Promise<TagsConfig> {
+  console.log('🏷️  loadTagsConfig: Starting to load tags from config...')
+
+  try {
+    const configDir = await cntxDir.getDirectoryHandle('config')
+    console.log('🏷️  loadTagsConfig: Found config directory')
+
+    const tagsHandle = await configDir.getFileHandle('tags.ts')
+    console.log('🏷️  loadTagsConfig: Found tags.ts file')
+
+    const file = await tagsHandle.getFile()
+    const content = await file.text()
+
+    console.log(
+      '🏷️  loadTagsConfig: Read file content, length:',
+      content.length
+    )
+    console.log(
+      '🏷️  loadTagsConfig: Content preview:',
+      content.substring(0, 200) + '...'
+    )
+
+    // More robust regex to match different export formats
+    const patterns = [
+      /export\s+default\s*({[\s\S]*?})\s*as\s+const/, // export default {...} as const
+      /default\s*:\s*({[\s\S]*?}),?\s*}\s*as\s+const/, // default: {...} } as const
+      /default\s*({[\s\S]*?})\s*as\s+const/, // default {...} as const
+      /=\s*({[\s\S]*?})\s*as\s+const/, // = {...} as const
+    ]
+
+    let match = null
+    let usedPattern = -1
+
+    for (let i = 0; i < patterns.length; i++) {
+      match = content.match(patterns[i])
+      if (match) {
+        usedPattern = i
+        console.log(`🏷️  loadTagsConfig: Matched pattern ${i}:`, patterns[i])
+        break
+      }
+    }
+
+    if (!match) {
+      console.warn('🏷️  loadTagsConfig: No matching pattern found in tags.ts')
+      console.log('🏷️  loadTagsConfig: File content:', content)
+      console.warn('🏷️  loadTagsConfig: Returning DEFAULT_TAGS as fallback')
+      return DEFAULT_TAGS
+    }
+
+    console.log(
+      '🏷️  loadTagsConfig: Extracted object string:',
+      match[1].substring(0, 100) + '...'
+    )
+
+    try {
+      // Safer parsing approach
+      const objectString = match[1]
+
+      // Clean up the object string for safer eval
+      const cleanedString = objectString
+        .replace(/\/\/.*$/gm, '') // Remove single-line comments
+        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+
+      console.log('🏷️  loadTagsConfig: Attempting to parse object...')
+      const parsedTags = eval('(' + cleanedString + ')')
+
+      console.log(
+        '🏷️  loadTagsConfig: Successfully parsed tags:',
+        Object.keys(parsedTags)
+      )
+      console.log(
+        '🏷️  loadTagsConfig: Tag count:',
+        Object.keys(parsedTags).length
+      )
+
+      // Merge with DEFAULT_TAGS to ensure we have all standard tags
+      const mergedTags = {
+        ...DEFAULT_TAGS,
+        ...parsedTags,
+      }
+
+      console.log(
+        '🏷️  loadTagsConfig: Final merged tag count:',
+        Object.keys(mergedTags).length
+      )
+      return mergedTags
+    } catch (parseError) {
+      console.error(
+        '🏷️  loadTagsConfig: Error parsing tags object:',
+        parseError
+      )
+      console.log('🏷️  loadTagsConfig: Problematic object string:', match[1])
+      console.warn(
+        '🏷️  loadTagsConfig: Returning DEFAULT_TAGS due to parse error'
+      )
+      return DEFAULT_TAGS
+    }
+  } catch (error) {
+    console.error('🏷️  loadTagsConfig: Error loading tags config:', error)
+
+    if (error.name === 'NotFoundError') {
+      console.log(
+        '🏷️  loadTagsConfig: tags.ts file not found, this is normal for new projects'
+      )
+    } else {
+      console.error('🏷️  loadTagsConfig: Unexpected error:', error)
+    }
+
+    console.log('🏷️  loadTagsConfig: Returning DEFAULT_TAGS as fallback')
+    return DEFAULT_TAGS
+  }
+}
+
+// Also improve saveTagsConfig to ensure proper formatting
 export async function saveTagsConfig(
   cntxDir: FileSystemDirectoryHandle,
   tags: TagsConfig
 ) {
   try {
+    console.log('🏷️  saveTagsConfig: Saving tags:', Object.keys(tags))
+
     const configDir = await cntxDir.getDirectoryHandle('config')
     const tagsHandle = await configDir.getFileHandle('tags.ts', {
       create: true,
     })
     const writable = await tagsHandle.createWritable()
 
+    // Create properly formatted content
     const content = `// .cntx/config/tags.ts
+// Auto-generated tags configuration
 export default ${JSON.stringify(tags, null, 2)} as const;
 `
 
+    console.log(
+      '🏷️  saveTagsConfig: Writing content with length:',
+      content.length
+    )
     await writable.write(content)
     await writable.close()
+
+    console.log('✅ saveTagsConfig: Successfully saved tags to tags.ts')
   } catch (error) {
-    console.error('Error saving tags config:', error)
-  }
-}
-
-export async function loadTagsConfig(
-  cntxDir: FileSystemDirectoryHandle
-): Promise<TagsConfig> {
-  try {
-    const configDir = await cntxDir.getDirectoryHandle('config')
-    const tagsHandle = await configDir.getFileHandle('tags.ts')
-    const file = await tagsHandle.getFile()
-    const content = await file.text()
-
-    const match = content.match(/default\s*({[\s\S]*})\s*as const/)
-    if (!match) return {}
-
-    const obj = eval('(' + match[1] + ')')
-    return obj
-  } catch (error) {
-    console.error('Error loading tags:', error)
-    return {}
+    console.error('🏷️  saveTagsConfig: Error saving tags config:', error)
+    throw error
   }
 }
 
@@ -505,6 +672,58 @@ export default [
     console.log('Successfully saved patterns to pattern-ignore.ts')
   } catch (error) {
     console.error('Error saving pattern ignore:', error)
+    throw error
+  }
+}
+
+// Project metadata management
+export async function loadProjectMetadata(
+  cntxDir: FileSystemDirectoryHandle
+): Promise<ProjectMetadata> {
+  try {
+    const configDir = await cntxDir.getDirectoryHandle('config')
+    const metadataHandle = await configDir.getFileHandle(
+      'project-metadata.json'
+    )
+    const file = await metadataHandle.getFile()
+    const content = await file.text()
+
+    const metadata = JSON.parse(content)
+    console.log('📋 Loaded project metadata:', metadata)
+    return metadata
+  } catch (error) {
+    console.log('📋 No project metadata found, returning defaults')
+    return {
+      name: 'Untitled Project',
+      description: '',
+      version: '1.0.0',
+      author: '',
+      lastUpdated: new Date().toISOString(),
+    }
+  }
+}
+
+export async function saveProjectMetadata(
+  cntxDir: FileSystemDirectoryHandle,
+  metadata: ProjectMetadata
+): Promise<void> {
+  try {
+    const configDir = await cntxDir.getDirectoryHandle('config')
+    const metadataHandle = await configDir.getFileHandle(
+      'project-metadata.json',
+      {
+        create: true,
+      }
+    )
+
+    const content = JSON.stringify(metadata, null, 2)
+    const writable = await metadataHandle.createWritable()
+    await writable.write(content)
+    await writable.close()
+
+    console.log('📋 Saved project metadata')
+  } catch (error) {
+    console.error('Error saving project metadata:', error)
     throw error
   }
 }

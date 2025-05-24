@@ -7,63 +7,6 @@ export function normalizePath(path: string): string {
   return path.replace(/\\/g, '/')
 }
 
-// export function shouldIgnorePath(
-//   path: string,
-//   config: { ignore: string[]; include?: string[] },
-//   isDirectory: boolean = false
-// ): boolean {
-//   const normalizedPath = path.toLowerCase().replace(/\\/g, '/')
-
-//   // Always ignore .cntx directory
-//   if (normalizedPath === '.cntx' || normalizedPath.startsWith('.cntx/')) {
-//     return true
-//   }
-
-//   // For debugging
-//   let matchedPattern = ''
-//   let shouldIgnore = false
-
-//   shouldIgnore = config.ignore.some((pattern) => {
-//     const normalizedPattern = pattern.toLowerCase().replace(/^\.\//, '')
-
-//     // Wildcard file extension patterns (e.g., *.mp3)
-//     if (pattern.startsWith('*.')) {
-//       const extension = pattern.slice(1).toLowerCase() // Keep the dot
-//       const result = normalizedPath.toLowerCase().endsWith(extension)
-//       if (result) matchedPattern = pattern
-//       return result
-//     }
-
-//     // Directory or exact file matches
-//     if (isDirectory) {
-//       const result =
-//         normalizedPath === normalizedPattern ||
-//         normalizedPath.startsWith(normalizedPattern + '/') ||
-//         normalizedPath.endsWith('/' + normalizedPattern) ||
-//         normalizedPath.includes('/' + normalizedPattern + '/')
-//       if (result) matchedPattern = pattern
-//       return result
-//     }
-
-//     // Exact file matches
-//     const result =
-//       normalizedPath === normalizedPattern ||
-//       normalizedPath.endsWith('/' + normalizedPattern)
-//     if (result) matchedPattern = pattern
-//     return result
-//   })
-
-//   if (shouldIgnore) {
-//     console.log(
-//       `Ignoring ${
-//         isDirectory ? 'directory' : 'file'
-//       }: ${path} (matched pattern: ${matchedPattern})`
-//     )
-//   }
-
-//   return shouldIgnore
-// }
-
 export function shouldIgnorePath(
   path: string,
   config: { ignore: string[] },
@@ -151,74 +94,6 @@ export function getAllDirectories(paths: string[]): string[] {
   return Array.from(directories).sort((a, b) => a.localeCompare(b))
 }
 
-// export async function processDirectory(
-//   dirHandle: FileSystemDirectoryHandle,
-//   relativePath: string = '',
-//   ignorePatterns?: string[]
-// ): Promise<WatchedFile[]> {
-//   // console.log('Processing directory with ignore patterns:', ignorePatterns)
-//   console.log('Processing directory with ignore patterns:', ignorePatterns)
-
-//   const files: WatchedFile[] = []
-
-//   try {
-//     const patternsToUse = Array.isArray(ignorePatterns)
-//       ? ignorePatterns
-//       : DEFAULT_BUNDLE_IGNORE
-
-//     // console.log('patternsToUse:', patternsToUse)
-//     console.log('Using patterns:', patternsToUse)
-
-//     for await (const entry of dirHandle.values()) {
-//       const entryPath = relativePath
-//         ? `${relativePath}/${entry.name}`
-//         : entry.name
-
-//       if (
-//         shouldIgnorePath(
-//           entryPath,
-//           { ignore: patternsToUse },
-//           entry.kind === 'directory'
-//         )
-//       ) {
-//         // Log what's being ignored for debugging
-//         if (entry.kind === 'directory') {
-//           console.log(`Ignoring directory: ${entryPath}`)
-//         }
-//         continue
-//       }
-
-//       if (entry.kind === 'file') {
-//         const handle = entry
-//         const file = await handle.getFile()
-//         const { name, directory, path } = getPathParts(entryPath)
-
-//         files.push({
-//           path,
-//           name,
-//           directory,
-//           lastModified: new Date(file.lastModified),
-//           isChanged: false,
-//           isStaged: false,
-//           handle,
-//           tags: [],
-//         })
-//       } else if (entry.kind === 'directory') {
-//         const subFiles = await processDirectory(
-//           entry as FileSystemDirectoryHandle,
-//           entryPath,
-//           patternsToUse
-//         )
-//         files.push(...subFiles)
-//       }
-//     }
-//   } catch (error) {
-//     console.error('Error processing directory:', error)
-//   }
-
-//   return files
-// }
-
 export async function processDirectory(
   dirHandle: FileSystemDirectoryHandle,
   relativePath: string = '',
@@ -232,10 +107,10 @@ export async function processDirectory(
       ? ignorePatterns
       : DEFAULT_BUNDLE_IGNORE
 
-  console.log(
-    `Processing directory "${relativePath}" with patterns:`,
-    patternsToUse
-  )
+  // console.log(
+  //   `Processing directory "${relativePath}" with patterns:`,
+  //   patternsToUse
+  // )
 
   try {
     for await (const entry of dirHandle.values()) {
@@ -251,7 +126,7 @@ export async function processDirectory(
           entry.kind === 'directory'
         )
       ) {
-        console.log(`Ignoring path: ${entryPath}`)
+        // console.log(`Ignoring path: ${entryPath}`)
         continue
       }
 

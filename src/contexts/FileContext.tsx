@@ -1,4 +1,4 @@
-// src/contexts/FileContext.tsx
+// src/contexts/FileContext.tsx - ULTIMATE VERSION with bulletproof tag preservation
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import type { FileContextType } from './types';
 import type { BundleManifest, WatchedFile } from '@/types/types';
@@ -25,18 +25,26 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     if (!directoryHandle || !isWatching) return;
 
     try {
-      console.log('Refreshing files with ignore patterns:', ignorePatterns);
+      console.log('🔄 Refreshing files - ULTIMATE tag preservation mode...');
+
+      // Process directory to get current filesystem files
       const files = await processDirectory(directoryHandle, '', ignorePatterns);
       const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
-      // const state = await loadState(cntxDir);
-      const state = await loadState(cntxDir, ignorePatterns);
+
+      // ULTIMATE FIX: Load existing state with ZERO filtering to preserve ALL tags
+      const existingState = await loadState(cntxDir, []); // NO filtering whatsoever
+      console.log('📂 Loaded existing state for', Object.keys(existingState.files).length, 'files');
+
+      // Log all files with tags before processing
+      const existingTaggedFiles = Object.entries(existingState.files).filter(([, state]) =>
+        state.tags && state.tags.length > 0
+      );
+      console.log(`🏷️  Found ${existingTaggedFiles.length} files with existing tags to preserve`);
 
       let masterManifest: BundleManifest | null = null;
 
       try {
         const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
-
-        // Explicitly create the master directory if it doesn't exist
         let masterDir;
         try {
           masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
@@ -59,7 +67,6 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (manifests.length > 0) {
-          // Find the latest manifest based on lastModified
           const latestManifest = manifests.reduce((latest, current) => {
             return current.lastModified > latest.lastModified ? current : latest;
           });
@@ -80,6 +87,7 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
         console.log('No master bundle found or error reading it:', error);
       }
 
+      // ULTIMATE MERGE: Combine filesystem data with preserved state data
       const updatedFiles = files.map(file => {
         // Check if this file exists in the master manifest
         const masterFile = masterManifest?.files.find(f => f.path === file.path);
@@ -89,28 +97,67 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
           ? new Date(file.lastModified) > new Date(masterFile.lastModified)
           : true; // New file if not in master
 
-        // Get existing state for this file or create default
-        const existingState = state.files[file.path] || {
-          isStaged: false,
-          masterBundleId: masterManifest?.id,
-          tags: []
-        };
+        // ULTIMATE PRESERVATION: Always prioritize existing state data
+        const existingFileState = existingState.files[file.path];
 
-        return {
-          ...file,
-          isStaged: existingState.isStaged || false,
-          isChanged,
-          masterBundleId: existingState.masterBundleId || masterManifest?.id,
-          tags: existingState.tags || []
-        };
+        if (existingFileState) {
+          // File exists in state - ABSOLUTELY PRESERVE ALL existing data
+          console.log(`🏷️  PRESERVING existing state for ${file.path}:`, {
+            tags: existingFileState.tags,
+            staged: existingFileState.isStaged,
+            bundleId: existingFileState.masterBundleId
+          });
+
+          return {
+            ...file,
+            isStaged: existingFileState.isStaged,
+            isChanged,
+            masterBundleId: existingFileState.masterBundleId || masterManifest?.id,
+            // ULTIMATE: NEVER EVER lose existing tags
+            tags: Array.isArray(existingFileState.tags) ? [...existingFileState.tags] : []
+          };
+        } else {
+          // New file - create default state
+          console.log(`➕ Creating new state for ${file.path}`);
+          return {
+            ...file,
+            isStaged: false,
+            isChanged,
+            masterBundleId: masterManifest?.id,
+            tags: []
+          };
+        }
       });
 
       setWatchedFiles(updatedFiles);
 
-      // Update the state with new files, but only for non-ignored files
-      const newState = { ...state };
+      // ULTIMATE STATE UPDATE: Start with existing state and only update what's necessary
+      const newState = {
+        ...existingState,
+        lastAccessed: new Date().toISOString()
+      };
+
+      // Update state for files that exist in filesystem
       updatedFiles.forEach(file => {
-        if (!shouldIgnorePath(file.path, { ignore: ignorePatterns })) {
+        const existingFileState = newState.files[file.path];
+
+        if (existingFileState) {
+          // PRESERVE EVERYTHING, only update what actually changed
+          newState.files[file.path] = {
+            ...existingFileState, // Start with EVERYTHING from existing state
+            // Only update filesystem-derived properties
+            name: file.name,
+            directory: file.directory,
+            lastModified: file.lastModified.toISOString(),
+            isChanged: file.isChanged,
+            // Keep existing staging and bundle states unless explicitly changed
+            isStaged: existingFileState.isStaged,
+            masterBundleId: file.masterBundleId || existingFileState.masterBundleId,
+            // ULTIMATE: ABSOLUTELY NEVER touch existing tags
+            tags: existingFileState.tags || []
+          };
+        } else {
+          // New file - create fresh entry
           newState.files[file.path] = {
             name: file.name,
             directory: file.directory,
@@ -118,17 +165,44 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
             isChanged: file.isChanged,
             isStaged: file.isStaged,
             masterBundleId: file.masterBundleId,
-            tags: file.tags
+            tags: []
           };
         }
       });
 
-      // Save the updated state
-      // await saveState(cntxDir, state);
-      await saveState(cntxDir, newState, ignorePatterns);
+      // ULTIMATE RULE: Files with tags are NEVER removed from state
+      // Even if they don't exist in the current filesystem scan
+      const preservedTaggedFiles = Object.entries(existingState.files).filter(([path, state]) => {
+        const hasImportantData = (state.tags && state.tags.length > 0) ||
+          state.isStaged ||
+          state.masterBundleId;
+        const notInCurrentScan = !updatedFiles.find(f => f.path === path);
+
+        return hasImportantData && notInCurrentScan;
+      });
+
+      if (preservedTaggedFiles.length > 0) {
+        console.log(`🏷️  PRESERVING ${preservedTaggedFiles.length} files with important data that weren't in current scan:`);
+        preservedTaggedFiles.forEach(([path, state]) => {
+          console.log(`  ${path}: tags=[${state.tags?.join(', ') || 'none'}], staged=${state.isStaged}, bundleId=${state.masterBundleId}`);
+          // Keep these files in the state even though they weren't scanned
+          newState.files[path] = state;
+        });
+      }
+
+      // Log final tag preservation verification
+      const finalTaggedFiles = Object.entries(newState.files).filter(([, fileState]) =>
+        fileState.tags && fileState.tags.length > 0
+      );
+      console.log(`✅ FINAL VERIFICATION: Preserving ${finalTaggedFiles.length} files with tags:`,
+        finalTaggedFiles.slice(0, 5).map(([path, state]) => `${path} [${state.tags.join(', ')}]`)
+      );
+
+      // Save state with ULTIMATE tag preservation (no filtering)
+      await saveState(cntxDir, newState, []); // NEVER filter when saving
 
     } catch (error) {
-      console.error('Error refreshing files:', error);
+      console.error('❌ Error refreshing files:', error);
     }
   }, [directoryHandle, isWatching, ignorePatterns]);
 
@@ -139,36 +213,13 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     }
   }, [directoryHandle]);
 
-  // // Combined effect for handling file changes and pattern updates
-  // useEffect(() => {
-  //   if (!directoryHandle || !isWatching) return;
-
-  //   if (recentChanges.length > 0) {
-  //     const latestChange = recentChanges[0];
-  //     if (!lastProcessedChange || latestChange.timestamp > lastProcessedChange) {
-  //       refreshFiles();
-  //       setLastProcessedChange(latestChange.timestamp);
-  //     }
-  //   } else {
-  //     refreshFiles();
-  //   }
-  // }, [directoryHandle, isWatching, recentChanges, refreshFiles, lastProcessedChange, ignorePatterns]);
-
-  // useEffect(() => {
-  //   if (directoryHandle && isWatching && ignorePatterns.length > 0) {
-  //     console.log('Ignore patterns changed, triggering file refresh');
-  //     refreshFiles();
-  //   }
-  // }, [ignorePatterns, directoryHandle, isWatching, refreshFiles]);
-
-
   // Separate effect for ignore pattern changes
   useEffect(() => {
     if (directoryHandle && isWatching && ignorePatterns.length > 0) {
-      console.log('Ignore patterns changed, forcing refresh with patterns:', ignorePatterns);
+      console.log('🔧 Ignore patterns changed, refreshing with ULTIMATE tag preservation:', ignorePatterns);
       refreshFiles();
     }
-  }, [ignorePatterns, directoryHandle, isWatching, refreshFiles]); // This effect only runs when patterns change
+  }, [ignorePatterns, directoryHandle, isWatching, refreshFiles]);
 
   // Separate effect for file changes
   useEffect(() => {
@@ -192,7 +243,9 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
-      const state = await loadState(cntxDir);
+
+      // ULTIMATE: Load state without ANY filtering to preserve ALL tagged files
+      const state = await loadState(cntxDir, []); // Absolutely no filtering
       const firstPath = paths[0];
       let targetState = false;
 
@@ -213,11 +266,16 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
             tags: []
           };
         } else {
-          state.files[path].isStaged = targetState;
+          // ULTIMATE PRESERVATION: Keep everything, only change isStaged
+          state.files[path] = {
+            ...state.files[path], // PRESERVE EVERYTHING including tags
+            isStaged: targetState  // Only change this one property
+          };
         }
       });
 
-      await saveState(cntxDir, state);
+      // Save with ULTIMATE tag preservation (no filtering)
+      await saveState(cntxDir, state, []); // Never filter when saving
 
       setWatchedFiles(prev => prev.map(file =>
         paths.includes(file.path)
@@ -225,7 +283,7 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
           : file
       ));
     } catch (error) {
-      console.error('Error toggling staged status:', error);
+      console.error('❌ Error toggling staged status:', error);
     }
   }, [directoryHandle]);
 

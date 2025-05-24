@@ -1,6 +1,16 @@
+// src/contexts/types.ts
 import { Bundle, TagsConfig, WatchedFile } from '@/types/types'
 
-// src/contexts/types.ts
+export interface ProjectMetadata {
+  name: string
+  description: string
+  version: string
+  author: string
+  lastUpdated: string
+  repository?: string
+  license?: string
+  keywords?: string[]
+}
 export interface DirectoryContextType {
   currentDirectory: string | null
   directoryHandle: FileSystemDirectoryHandle | null
@@ -52,4 +62,6 @@ export interface ProjectConfigContextType {
   updateIgnorePatterns: (patterns: string[]) => void
   isProjectInitialized: boolean
   initializeProject: () => Promise<void>
+  projectMetadata: ProjectMetadata | null
+  updateProjectMetadata: (metadata: ProjectMetadata) => Promise<void>
 }

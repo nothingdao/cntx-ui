@@ -1,9 +1,10 @@
-// src/components/DirectoryPanel.tsx
+// src/components/DirectoryPanel.tsx - UPDATED with working batch tagging
 import { useCallback } from 'react';
-import { Filter, FolderOpen, Paintbrush } from "lucide-react";
+import { Filter, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from './theme/mode-toggle';
 import { DirectoryTree } from './DirectoryTree';
+import { BatchTagButton } from './BatchTagButton'; // New import
 
 // Import all the necessary context hooks including ProjectConfigContext
 import { useDirectory } from '@/contexts/DirectoryContext';
@@ -59,12 +60,15 @@ export function DirectoryPanel() {
     }
   }, [stagedFiles, toggleStaged]);
 
-  const handleTagSelected = useCallback(() => {
-    // Implementation for tagging selected files
-  }, []);
+  // Handle successful tagging (refresh the tree to show new tags)
+  const handleTagsApplied = useCallback(async () => {
+    console.log('🏷️  Tags applied successfully, refreshing file tree...');
+    await refreshFiles();
+  }, [refreshFiles]);
 
   const handleFilterFiles = useCallback(() => {
-    // Implementation for filtering files
+    // Implementation for filtering files - could open a filter dialog
+    console.log('🔍 Filter files clicked - implement filter dialog');
   }, []);
 
   // Log the current ignore patterns to verify they're loaded correctly
@@ -101,18 +105,18 @@ export function DirectoryPanel() {
             >
               Bundle ({stagedFiles.length})
             </Button>
-            <Button
-              onClick={handleTagSelected}
-              variant="outline"
-              size="sm"
-              disabled={stagedFiles.length === 0}
-            >
-              <Paintbrush className="h-4 w-4" />
-            </Button>
+
+            {/* NEW: Batch Tag Button */}
+            <BatchTagButton
+              selectedFiles={stagedFiles}
+              onTagsApplied={handleTagsApplied}
+            />
+
             <Button
               onClick={handleFilterFiles}
               variant="outline"
               size="sm"
+              title="Filter files (coming soon)"
             >
               <Filter className="h-4 w-4" />
             </Button>
@@ -129,6 +133,30 @@ export function DirectoryPanel() {
               Clear Selection
             </Button>
           </div>
+
+          {/* Selection summary */}
+          {stagedFiles.length > 0 && (
+            <div className="text-xs text-muted-foreground bg-muted rounded p-2">
+              <div className="font-medium">Selected files:</div>
+              <div className="max-h-20 overflow-y-auto mt-1">
+                {stagedFiles.slice(0, 5).map((file, index) => (
+                  <div key={file.path} className="truncate">
+                    {index + 1}. {file.name}
+                    {file.tags && file.tags.length > 0 && (
+                      <span className="ml-2 text-xs opacity-70">
+                        [{file.tags.join(', ')}]
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {stagedFiles.length > 5 && (
+                  <div className="text-xs opacity-70 mt-1">
+                    ... and {stagedFiles.length - 5} more
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

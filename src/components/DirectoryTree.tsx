@@ -12,6 +12,7 @@ import { FileTagsDisplay } from './FileTagsDisplay';
 import { useProjectConfig } from '@/contexts/ProjectConfigContext';
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTags } from '@/contexts/TagContext';
 type DirectoryTreeProps = {
   files: WatchedFile[];
   onToggleStage: (paths: string[]) => void;
@@ -66,6 +67,8 @@ function FileRow({
   depth?: number;
   isSelected?: boolean;
 }) {
+  const { tags } = useTags(); // Add this import at the top: import { useTags } from '@/contexts/TagContext';
+
   return (
     <div className="space-y-1">
       <div
@@ -83,6 +86,28 @@ function FileRow({
         <span className="flex-1 truncate text-sm">
           {file.name}
         </span>
+
+        {/* Enhanced tag display with colors */}
+        {file.tags && file.tags.length > 0 && (
+          <div className="flex items-center gap-1">
+            {file.tags.slice(0, 3).map(tagName => (
+              <div
+                key={tagName}
+                className="w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor: tags[tagName]?.color || '#94a3b8',
+                }}
+                title={`Tag: ${tagName}`}
+              />
+            ))}
+            {file.tags.length > 3 && (
+              <span className="text-xs text-muted-foreground">
+                +{file.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
         {file.isChanged && (
           <SquareDot
             className="text-red-400"
@@ -90,6 +115,7 @@ function FileRow({
             strokeWidth={1.5}
           />
         )}
+
         <FileTagsDisplay filePath={file.path} />
       </div>
     </div>
