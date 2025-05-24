@@ -1,7 +1,7 @@
 {
   "name": "cntx-ui",
   "type": "module",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "File bundling and tagging tool for AI development",
   "keywords": [
     "ai",
