@@ -1,17 +1,32 @@
-// src/contexts/BundleContext.tsx
+// src/contexts/BundleContext.tsx - Enhanced with tag bundle creation
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
-import type { BundleContextType } from './types';
 import type { Bundle } from '@/types/types';
 import { useDirectory } from './DirectoryContext';
 import { useFiles } from './FileContext';
-import { useProjectConfig } from './ProjectConfigContext';  // Added for access to ignore patterns
-import { createBundleFile } from '@/utils/file-state';
+import { useProjectConfig } from './ProjectConfigContext';
+import { createBundleFile, createTagBundleFile } from '@/utils/file-state'; // createTagBundleFile needs to be added
 import { createMasterBundle as createMasterBundleUtil } from '@/utils/project-utils';
+
+// Enhanced context type with tag bundle creation
+type BundleContextType = {
+  bundles: Bundle[];
+  masterBundle: Bundle | null;
+  createBundle: () => Promise<string>;
+  createTagBundle: (tagName: string) => Promise<string>; // NEW
+  updateBundle: (
+    bundleName: string,
+    filesToInclude: any[],
+    filesToRemove?: string[]
+  ) => Promise<{ success: boolean; error?: string; bundleId?: string }>;
+  createMasterBundle: () => Promise<void>;
+  loadBundles: () => Promise<void>;
+};
 
 const BundleContext = createContext<BundleContextType>({
   bundles: [],
   masterBundle: null,
   createBundle: async () => '',
+  createTagBundle: async () => '', // NEW
   updateBundle: async () => ({ success: false }),
   createMasterBundle: async () => { },
   loadBundles: async () => { },
@@ -22,118 +37,170 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
   const [masterBundle, setMasterBundle] = useState<Bundle | null>(null);
   const { directoryHandle, isWatching } = useDirectory();
   const { watchedFiles, stagedFiles, refreshFiles } = useFiles();
-  const { ignorePatterns } = useProjectConfig();  // Get ignore patterns from config
+  const { ignorePatterns } = useProjectConfig();
+
+  // Helper function to load a bundle with proper type detection and metadata extraction
+  const loadBundleWithType = useCallback(async (
+    entry: FileSystemFileHandle,
+    dir: FileSystemDirectoryHandle,
+    defaultType: 'master' | 'tag-derived' | 'custom',
+    derivedFromTag?: string
+  ): Promise<Bundle | null> => {
+    try {
+      const file = await entry.getFile();
+      const content = await file.text();
+      const fileCount = (content.match(/<document>/g) || []).length;
+
+      // Extract enhanced metadata from bundle XML content
+      const typeMatch = content.match(/type="([^"]+)"/);
+      const derivedTagMatch = content.match(/<derivedFromTag>([^<]+)<\/derivedFromTag>/);
+      const descriptionMatch = content.match(/<description>([^<]+)<\/description>/);
+
+      // Determine actual bundle type and metadata
+      const bundleType = (typeMatch?.[1] as any) || defaultType;
+      const actualDerivedTag = derivedTagMatch?.[1] || derivedFromTag;
+      const description = descriptionMatch?.[1];
+
+      // Generate bundle ID from filename
+      const bundleId = entry.name.replace(/\.txt$/, '');
+
+      // Try to load manifest for enhanced tag counting
+      let tagsCount = 0;
+      try {
+        const manifestName = `${bundleId}-manifest.json`;
+        const manifestFile = await dir.getFileHandle(manifestName);
+        const manifestContent = await manifestFile.getFile().then(f => f.text());
+        const manifest = JSON.parse(manifestContent);
+
+        // Count how many files in the manifest have tags (from current watchedFiles)
+        const taggedFilePaths = new Set(watchedFiles.filter(f => f.tags?.length > 0).map(f => f.path));
+        const manifestFilesWithTags = manifest.files.filter((f: any) => taggedFilePaths.has(f.path));
+        tagsCount = manifestFilesWithTags.length;
+      } catch (error) {
+        console.log(`Could not load manifest for ${entry.name}:`, error);
+      }
+
+      // Generate automatic description for tag-derived bundles if not provided
+      const finalDescription = description ||
+        (bundleType === 'tag-derived' ? `Files tagged with "${actualDerivedTag}"` : undefined);
+
+      return {
+        name: entry.name,
+        timestamp: new Date(file.lastModified),
+        fileCount,
+        tagCount: tagsCount,
+        type: bundleType,
+        id: bundleId,
+        derivedFromTag: actualDerivedTag,
+        description: finalDescription,
+      };
+    } catch (error) {
+      console.error(`Error loading bundle ${entry.name}:`, error);
+      return null;
+    }
+  }, [watchedFiles]);
 
   const loadBundles = useCallback(async () => {
     if (!directoryHandle || !isWatching) return;
 
     try {
-      console.log('Loading bundles...');
+      console.log('🔄 Loading bundles with enhanced type detection...');
       const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
       const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
       const loadedBundles: Bundle[] = [];
 
-      // Load regular bundles
+      // 1. Load custom bundles (regular bundles in root bundles directory)
+      console.log('📦 Loading custom bundles...');
       for await (const entry of bundlesDir.values()) {
         if (entry.kind === 'file' && entry.name.endsWith('.txt') && !entry.name.startsWith('master-')) {
-          const file = await entry.getFile();
-          const content = await file.text();
-          const fileCount = (content.match(/<document>/g) || []).length;
-
-          // Extract bundle ID from the name for manifest loading
-          const bundleId = entry.name.replace(/\.txt$/, '');
-          let tagsCount = 0;
-
-          // Try to load the manifest to get more info
-          try {
-            const manifestName = `${bundleId}-manifest.json`;
-            const manifestFile = await bundlesDir.getFileHandle(manifestName);
-            const manifestContent = await manifestFile.getFile().then(f => f.text());
-            const manifest = JSON.parse(manifestContent);
-
-            // Count how many files in the manifest have tags (from current watchedFiles)
-            const taggedFilePaths = new Set(watchedFiles.filter(f => f.tags?.length > 0).map(f => f.path));
-            const manifestFilesWithTags = manifest.files.filter((f: any) => taggedFilePaths.has(f.path));
-            tagsCount = manifestFilesWithTags.length;
-          } catch (error) {
-            // If manifest can't be loaded, just continue
-            console.log(`Could not load manifest for ${entry.name}:`, error);
+          const bundle = await loadBundleWithType(entry, bundlesDir, 'custom');
+          if (bundle) {
+            console.log(`✅ Loaded custom bundle: ${bundle.name} (${bundle.fileCount} files)`);
+            loadedBundles.push(bundle);
           }
-
-          loadedBundles.push({
-            name: entry.name,
-            timestamp: new Date(file.lastModified),
-            fileCount,
-            tagCount: tagsCount
-          });
         }
       }
 
-      // Load master bundles
+      // 2. Load tag-derived bundles from tag-bundles subdirectory
+      console.log('🏷️  Loading tag-derived bundles...');
       try {
-        // Always use create: true to ensure directory exists
+        const tagBundlesDir = await bundlesDir.getDirectoryHandle('tag-bundles');
+
+        for await (const tagDirEntry of tagBundlesDir.values()) {
+          if (tagDirEntry.kind === 'directory') {
+            const tagDir = tagDirEntry as FileSystemDirectoryHandle;
+            const tagName = tagDirEntry.name;
+
+            console.log(`🔍 Checking tag directory: ${tagName}`);
+
+            for await (const bundleEntry of tagDir.values()) {
+              if (bundleEntry.kind === 'file' && bundleEntry.name.endsWith('.txt')) {
+                const bundle = await loadBundleWithType(bundleEntry, tagDir, 'tag-derived', tagName);
+                if (bundle) {
+                  console.log(`✅ Loaded tag-derived bundle: ${bundle.name} (tag: ${tagName}, ${bundle.fileCount} files)`);
+                  loadedBundles.push(bundle);
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log('ℹ️  No tag-bundles directory found or error loading tag bundles:', error);
+      }
+
+      // 3. Load master bundles (keep existing logic but with enhanced type detection)
+      console.log('👑 Loading master bundles...');
+      try {
         const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
-        console.log('Found master directory, checking for master bundles...');
 
         let latestMasterBundle: Bundle | null = null;
         let latestTimestamp = 0;
 
         for await (const entry of masterDir.values()) {
           if (entry.kind === 'file' && entry.name.endsWith('.txt')) {
-            const file = await entry.getFile();
-            const content = await file.text();
-            const fileCount = (content.match(/<document>/g) || []).length;
-            const timestamp = file.lastModified;
-
-            console.log(`Found master bundle: ${entry.name}, timestamp: ${new Date(timestamp)}`);
-
-            if (timestamp > latestTimestamp) {
-              latestTimestamp = timestamp;
-              latestMasterBundle = {
-                name: entry.name,
-                timestamp: new Date(timestamp),
-                fileCount,
-                tagCount: 0 // We'll update this after loading if possible
-              };
+            const bundle = await loadBundleWithType(entry, masterDir, 'master');
+            if (bundle && bundle.timestamp.getTime() > latestTimestamp) {
+              latestTimestamp = bundle.timestamp.getTime();
+              latestMasterBundle = bundle;
+              console.log(`🔍 Found master bundle: ${bundle.name}, timestamp: ${bundle.timestamp}`);
             }
           }
         }
 
-        // If we found a master bundle, try to load its tag info
         if (latestMasterBundle) {
-          console.log(`Setting master bundle to: ${latestMasterBundle.name}`);
-
-          // Try to get tag count for master bundle
-          try {
-            const bundleId = latestMasterBundle.name.replace(/\.txt$/, '');
-            const manifestName = `${bundleId}-manifest.json`;
-            const manifestFile = await masterDir.getFileHandle(manifestName);
-            const manifestContent = await manifestFile.getFile().then(f => f.text());
-            const manifest = JSON.parse(manifestContent);
-
-            // Count how many files in the manifest have tags (from current watchedFiles)
-            const taggedFilePaths = new Set(watchedFiles.filter(f => f.tags?.length > 0).map(f => f.path));
-            const manifestFilesWithTags = manifest.files.filter((f: any) => taggedFilePaths.has(f.path));
-            latestMasterBundle.tagCount = manifestFilesWithTags.length;
-          } catch (error) {
-            console.log(`Could not load tag info for master bundle:`, error);
-          }
-
+          console.log(`👑 Setting master bundle to: ${latestMasterBundle.name}`);
           setMasterBundle(latestMasterBundle);
         } else {
-          console.log('No master bundles found');
+          console.log('ℹ️  No master bundles found');
           setMasterBundle(null);
         }
       } catch (error) {
-        console.error('Error loading master bundles:', error);
+        console.error('❌ Error loading master bundles:', error);
         setMasterBundle(null);
       }
 
-      setBundles(loadedBundles.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+      // Sort all bundles by timestamp (newest first)
+      const sortedBundles = loadedBundles.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      // Log summary statistics
+      const bundleStats = {
+        custom: sortedBundles.filter(b => b.type === 'custom').length,
+        tagDerived: sortedBundles.filter(b => b.type === 'tag-derived').length,
+        master: masterBundle ? 1 : 0,
+        total: sortedBundles.length + (masterBundle ? 1 : 0)
+      };
+
+      console.log(`📊 Bundle loading complete:`, bundleStats);
+      console.log(`   • ${bundleStats.custom} custom bundles`);
+      console.log(`   • ${bundleStats.tagDerived} tag-derived bundles`);
+      console.log(`   • ${bundleStats.master} master bundle`);
+      console.log(`   • ${bundleStats.total} total bundles`);
+
+      setBundles(sortedBundles);
     } catch (error) {
-      console.error('Error loading bundles:', error);
+      console.error('❌ Error loading bundles:', error);
     }
-  }, [directoryHandle, isWatching, watchedFiles]);
+  }, [directoryHandle, isWatching, watchedFiles, loadBundleWithType]);
 
   // Load bundles when directory is selected
   useEffect(() => {
@@ -165,6 +232,37 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
     }
   }, [directoryHandle, stagedFiles, loadBundles, refreshFiles]);
 
+  // NEW: Create tag-derived bundle
+  const createTagBundle = useCallback(async (tagName: string) => {
+    if (!directoryHandle) {
+      throw new Error('No directory handle available');
+    }
+
+    try {
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const filesWithTag = watchedFiles.filter(file => file.tags?.includes(tagName));
+
+      if (filesWithTag.length === 0) {
+        throw new Error(`No files found with tag "${tagName}"`);
+      }
+
+      console.log(`Creating tag bundle for "${tagName}" with ${filesWithTag.length} files`);
+      const result = await createTagBundleFile(filesWithTag, tagName, cntxDir);
+
+      if (result.success) {
+        console.log('Tag bundle created successfully:', result.bundleId);
+        await loadBundles(); // Refresh bundle list
+        await refreshFiles(); // Refresh file states
+        return result.bundleId || '';
+      }
+
+      throw new Error(result.error || 'Failed to create tag bundle');
+    } catch (error) {
+      console.error('Error creating tag bundle:', error);
+      throw error; // Rethrow for UI handling
+    }
+  }, [directoryHandle, watchedFiles, loadBundles, refreshFiles]);
+
   const createMasterBundle = useCallback(async () => {
     if (!directoryHandle) {
       console.error('No directory handle available');
@@ -193,6 +291,7 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
     bundles,
     masterBundle,
     createBundle,
+    createTagBundle, // NEW
     createMasterBundle,
     loadBundles,
   };

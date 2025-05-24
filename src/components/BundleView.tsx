@@ -1,4 +1,4 @@
-// src/components/BundleView.tsx
+// src/components/BundleView.tsx - Fixed to handle all bundle types
 import { useState, useEffect } from 'react';
 import {
   Card,
@@ -36,7 +36,7 @@ import {
 import { useDirectory } from '@/contexts/DirectoryContext';
 import { useFiles } from '@/contexts/FileContext';
 import { useTags } from '@/contexts/TagContext';
-import { Bundle, BundleManifest } from '@/types/types';
+import { Bundle, BundleManifest, BundleType } from '@/types/types';
 import {
   analyzeBundleHealth,
   loadBundleManifest,
@@ -84,6 +84,115 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
   const [staleness, setStaleness] = useState(0);
   const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
 
+  // FIXED: Safe bundle file access that handles all bundle types
+  const getBundleFileHandle = async (bundle: Bundle): Promise<FileSystemFileHandle | null> => {
+    if (!directoryHandle) return null;
+
+    try {
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
+
+      // Determine bundle type with fallbacks for existing bundles
+      let bundleType: BundleType = bundle.type;
+      if (!bundleType) {
+        if (bundle.name.startsWith('master-')) {
+          bundleType = 'master';
+        } else if (bundle.derivedFromTag) {
+          bundleType = 'tag-derived';
+        } else {
+          bundleType = 'custom';
+        }
+      }
+
+      console.log(`🔍 Accessing bundle: ${bundle.name}, type: ${bundleType}`);
+
+      // Handle different bundle types with proper path resolution
+      switch (bundleType) {
+        case 'master': {
+          console.log('📁 Loading master bundle...');
+          const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
+          return await masterDir.getFileHandle(bundle.name);
+        }
+        case 'tag-derived': {
+          const tagName = bundle.derivedFromTag;
+          if (!tagName) {
+            console.error('Tag-derived bundle missing derivedFromTag:', bundle);
+            throw new Error('Tag-derived bundle is missing tag information');
+          }
+          console.log(`🏷️  Loading tag-derived bundle from tag: ${tagName}`);
+          const tagBundlesDir = await bundlesDir.getDirectoryHandle('tag-bundles');
+          const tagDir = await tagBundlesDir.getDirectoryHandle(tagName);
+          return await tagDir.getFileHandle(bundle.name);
+        }
+        case 'custom':
+        default: {
+          console.log('📦 Loading custom bundle...');
+          return await bundlesDir.getFileHandle(bundle.name);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Failed to get file handle for bundle ${bundle.name}:`, error);
+      throw error;
+    }
+  };
+
+  // FIXED: Safe manifest loading that handles all bundle types
+  const loadBundleManifestSafe = async (bundle: Bundle): Promise<BundleManifest | null> => {
+    if (!directoryHandle) return null;
+
+    try {
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
+
+      // Determine bundle type and manifest location
+      let bundleType: BundleType = bundle.type;
+      if (!bundleType) {
+        if (bundle.name.startsWith('master-')) {
+          bundleType = 'master';
+        } else if (bundle.derivedFromTag) {
+          bundleType = 'tag-derived';
+        } else {
+          bundleType = 'custom';
+        }
+      }
+
+      const bundleId = bundle.name.replace(/\.txt$/, '');
+      const manifestName = `${bundleId}-manifest.json`;
+
+      console.log(`📋 Loading manifest: ${manifestName} for ${bundleType} bundle`);
+
+      let manifestDir: FileSystemDirectoryHandle;
+      switch (bundleType) {
+        case 'master':
+          manifestDir = await bundlesDir.getDirectoryHandle('master', { create: true });
+          break;
+        case 'tag-derived':
+          const tagName = bundle.derivedFromTag;
+          if (!tagName) {
+            console.error('Tag-derived bundle missing derivedFromTag:', bundle);
+            return null;
+          }
+          const tagBundlesDir = await bundlesDir.getDirectoryHandle('tag-bundles');
+          manifestDir = await tagBundlesDir.getDirectoryHandle(tagName);
+          break;
+        case 'custom':
+        default:
+          manifestDir = bundlesDir;
+          break;
+      }
+
+      const manifestFile = await manifestDir.getFileHandle(manifestName);
+      const manifestContent = await manifestFile.getFile().then(f => f.text());
+      const manifest = JSON.parse(manifestContent);
+
+      console.log(`✅ Successfully loaded manifest for ${bundle.name}`);
+      return manifest;
+    } catch (error) {
+      console.error(`❌ Error loading manifest for ${bundle.name}:`, error);
+      return null;
+    }
+  };
+
   // Load bundle content and analyze it
   useEffect(() => {
     async function loadBundle() {
@@ -96,38 +205,36 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
       setError(null);
 
       try {
-        // Load bundle content
-        const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
-        const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
+        console.log(`🔄 Loading bundle: ${bundle.name}`);
 
-        // Determine if it's a master bundle
-        let bundleHandle;
-        if (bundle.name.startsWith('master-')) {
-          const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
-          bundleHandle = await masterDir.getFileHandle(bundle.name);
-        } else {
-          bundleHandle = await bundlesDir.getFileHandle(bundle.name);
+        // Load bundle content using safe method
+        const bundleHandle = await getBundleFileHandle(bundle);
+        if (!bundleHandle) {
+          throw new Error('Could not access bundle file');
         }
 
         const file = await bundleHandle.getFile();
         const content = await file.text();
         setContent(content);
+        console.log(`✅ Bundle content loaded: ${content.length} characters`);
 
-        // Load manifest
-        const loadedManifest = await loadBundleManifest(cntxDir, bundle.name);
+        // Load manifest using safe method
+        const loadedManifest = await loadBundleManifestSafe(bundle);
         setManifest(loadedManifest);
 
-        // Analyze bundle health
+        // Analyze bundle health if manifest is available
         if (loadedManifest) {
+          console.log('🔍 Analyzing bundle health...');
           const analysis = await analyzeBundleHealth(bundle, loadedManifest, watchedFiles);
           setStaleFiles(analysis.staleFiles);
           setFreshFiles(analysis.freshFiles);
           setMissingFiles(analysis.missingFiles);
           setStaleness(analysis.staleness);
           setTagCounts(analysis.tags);
+          console.log(`📊 Analysis complete: ${analysis.staleness}% stale`);
         }
       } catch (error) {
-        console.error('Error loading bundle:', error);
+        console.error('❌ Error loading bundle:', error);
         setError(`Failed to load bundle: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setLoading(false);
@@ -164,7 +271,7 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
 
   const allFiles = extractFiles();
 
-  // Update the filteredFiles function
+  // Filter files
   const filteredFiles = allFiles.filter(file => {
     const pathMatches = file.path.toLowerCase().includes(filePathFilter.toLowerCase());
     const tagMatches = !tagFilter || file.tags.includes(tagFilter);
@@ -177,9 +284,9 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
 
     try {
       await navigator.clipboard.writeText(content);
-      console.log('Bundle content copied to clipboard');
+      console.log('✅ Bundle content copied to clipboard');
     } catch (error) {
-      console.error('Failed to copy content:', error);
+      console.error('❌ Failed to copy content:', error);
     }
   };
 
@@ -196,6 +303,7 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    console.log(`✅ Bundle downloaded: ${bundle.name}`);
   };
 
   // Get a readable creation date
@@ -224,13 +332,38 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
     );
   }
 
-
-  // Add these functions before the return statement in BundleView component:
+  // Error state
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center text-red-500">
+            <AlertCircle className="mr-2 h-5 w-5" />
+            Error Loading Bundle
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm">{error}</p>
+            <div className="text-xs text-muted-foreground bg-muted p-3 rounded">
+              <strong>Bundle Details:</strong><br />
+              • Name: {bundle.name}<br />
+              • Type: {bundle.type || 'unknown'}<br />
+              • Derived from tag: {bundle.derivedFromTag || 'none'}<br />
+              • ID: {bundle.id}
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={onClose}>Close</Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   // Extract ASCII tree from bundle content
   const extractASCIITree = () => {
     if (!content) return null;
-
     const asciiMatch = content.match(/<asciiTree>([\s\S]*?)<\/asciiTree>/);
     return asciiMatch ? asciiMatch[1].trim() : null;
   };
@@ -271,26 +404,6 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
   const asciiTree = extractASCIITree();
   const bundleMetadata = extractMetadata();
 
-  // Error state
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-red-500">
-            <AlertCircle className="mr-2 h-5 w-5" />
-            Error Loading Bundle
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{error}</p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={onClose}>Close</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -300,6 +413,11 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
             <CardDescription>
               Created on {creationDate} • {bundle.fileCount} files
               {manifest && ` • ${100 - staleness}% fresh`}
+              {bundle.description && (
+                <span className="block text-xs mt-1 opacity-75">
+                  {bundle.description}
+                </span>
+              )}
             </CardDescription>
           </div>
           <div className="flex space-x-2">
@@ -311,6 +429,18 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
                 {stalenessLabel}
               </Badge>
             )}
+            {bundle.type && (
+              <Badge variant="outline">
+                {bundle.type === 'tag-derived' && bundle.derivedFromTag ? (
+                  <>
+                    <Tag className="h-3 w-3 mr-1" />
+                    {bundle.derivedFromTag}
+                  </>
+                ) : (
+                  bundle.type
+                )}
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -319,19 +449,17 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
           <TabsList className="mb-4">
             <TabsTrigger value="content" className="flex items-center gap-1">
               <FileText className="h-4 w-4" />
-              Files
+              Files ({allFiles.length})
             </TabsTrigger>
-            <TabsTrigger value="analysis" className="flex items-center gap-1">
-              <FileEdit className="h-4 w-4" />
-              Analysis
-            </TabsTrigger>
+            {manifest && (
+              <TabsTrigger value="analysis" className="flex items-center gap-1">
+                <FileEdit className="h-4 w-4" />
+                Analysis
+              </TabsTrigger>
+            )}
             <TabsTrigger value="tags" className="flex items-center gap-1">
               <Tag className="h-4 w-4" />
-              Tags
-            </TabsTrigger>
-            <TabsTrigger value="tree" className="flex items-center gap-1">
-              <FolderOpen className="h-4 w-4" />
-              Tree
+              Tags ({Object.keys(tagCounts).length})
             </TabsTrigger>
             <TabsTrigger value="raw" className="flex items-center gap-1">
               <FileText className="h-4 w-4" />
@@ -487,123 +615,73 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
             </div>
           </TabsContent>
 
-          {/* Analysis Tab */}
-          <TabsContent value="analysis">
-            <div className="space-y-6">
-              {manifest ? (
-                <>
-                  {/* Staleness indicator */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Bundle Freshness</span>
-                      <span>{100 - staleness}%</span>
-                    </div>
-                    <Progress
-                      value={100 - staleness}
-                      className="h-2"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>
-                        {freshFiles.length} fresh, {staleFiles.length} stale
-                        {missingFiles.length > 0 && `, ${missingFiles.length} missing`}
-                      </span>
-                      <span>
-                        Created {bundle.timestamp.toLocaleDateString()},
-                        {bundle.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
+          {/* Analysis Tab - only show if manifest exists */}
+          {manifest && (
+            <TabsContent value="analysis">
+              <div className="space-y-6">
+                {/* Staleness indicator */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Bundle Freshness</span>
+                    <span>{100 - staleness}%</span>
                   </div>
-
-                  {/* File statistics */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm flex items-center">
-                          <FileCheck className="h-4 w-4 mr-2 text-green-500" />
-                          Fresh Files
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="py-2">
-                        <div className="text-2xl font-bold">{freshFiles.length}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {freshFiles.length > 0 && (
-                            `${Math.round((freshFiles.length / (freshFiles.length + staleFiles.length)) * 100)}% of tracked files`
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm flex items-center">
-                          <FileEdit className="h-4 w-4 mr-2 text-amber-500" />
-                          Stale Files
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="py-2">
-                        <div className="text-2xl font-bold">{staleFiles.length}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {staleFiles.length > 0 && (
-                            `${Math.round((staleFiles.length / (freshFiles.length + staleFiles.length)) * 100)}% of tracked files`
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm flex items-center">
-                          <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
-                          Missing Files
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="py-2">
-                        <div className="text-2xl font-bold">{missingFiles.length}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {missingFiles.length > 0 && (
-                            `${Math.round((missingFiles.length / bundle.fileCount) * 100)}% of bundle files`
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <Progress
+                    value={100 - staleness}
+                    className="h-2"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>
+                      {freshFiles.length} fresh, {staleFiles.length} stale
+                      {missingFiles.length > 0 && `, ${missingFiles.length} missing`}
+                    </span>
+                    <span>
+                      Created {bundle.timestamp.toLocaleDateString()},
+                      {bundle.timestamp.toLocaleTimeString()}
+                    </span>
                   </div>
-
-                  {/* File Extension Stats */}
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">File Types</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {manifest && Object.entries(
-                        manifest.files.reduce((acc, file) => {
-                          const ext = file.path.split('.').pop()?.toLowerCase() || 'unknown';
-                          acc[ext] = (acc[ext] || 0) + 1;
-                          return acc;
-                        }, {} as Record<string, number>)
-                      )
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 8)
-                        .map(([ext, count]) => (
-                          <Badge
-                            key={ext}
-                            variant="secondary"
-                            className="flex items-center justify-between px-3 py-1.5"
-                          >
-                            <span>.{ext}</span>
-                            <span className="ml-2 bg-muted rounded-full px-2 py-0.5 text-xs">
-                              {count}
-                            </span>
-                          </Badge>
-                        ))}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  <p>No manifest found for this bundle. Analysis is not available.</p>
                 </div>
-              )}
-            </div>
-          </TabsContent>
+
+                {/* File statistics */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm flex items-center">
+                        <FileCheck className="h-4 w-4 mr-2 text-green-500" />
+                        Fresh Files
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <div className="text-2xl font-bold">{freshFiles.length}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm flex items-center">
+                        <FileEdit className="h-4 w-4 mr-2 text-amber-500" />
+                        Stale Files
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <div className="text-2xl font-bold">{staleFiles.length}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm flex items-center">
+                        <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
+                        Missing Files
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <div className="text-2xl font-bold">{missingFiles.length}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+          )}
 
           {/* Tags Tab */}
           <TabsContent value="tags">
@@ -654,68 +732,7 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
             </div>
           </TabsContent>
 
-          {/* Directory Tree Tab */}
-          <TabsContent value="tree">
-            <div className="space-y-4">
-              {bundleMetadata && (
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm">Bundle Metadata</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Project:</span> {bundleMetadata.projectName}
-                      </div>
-                      <div>
-                        <span className="font-medium">Type:</span> {bundleMetadata.bundleType}
-                      </div>
-                      <div>
-                        <span className="font-medium">Total Files:</span> {bundleMetadata.totalFiles}
-                      </div>
-                      <div>
-                        <span className="font-medium">Ignore Patterns:</span> {bundleMetadata.ignorePatterns.length}
-                      </div>
-                    </div>
-                    {bundleMetadata.ignorePatterns.length > 0 && (
-                      <div className="mt-3">
-                        <div className="text-xs font-medium mb-1">Excluded Patterns:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {bundleMetadata.ignorePatterns.map((pattern, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {pattern}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm">Directory Structure</CardTitle>
-                </CardHeader>
-                <CardContent className="py-2">
-                  {asciiTree ? (
-                    <ScrollArea className="h-[500px] w-full">
-                      <pre className="text-xs font-mono whitespace-pre leading-relaxed">
-                        {asciiTree}
-                      </pre>
-                    </ScrollArea>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FolderOpen className="h-8 w-8 mx-auto mb-2" />
-                      <p>No directory tree found in this bundle.</p>
-                      <p className="text-xs mt-1">This bundle was created with an older format.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
+          {/* Raw Content Tab */}
           <TabsContent value="raw">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -762,12 +779,12 @@ export function BundleView({ bundle, onClose }: BundleViewProps) {
               </div>
             </div>
           </TabsContent>
-
         </Tabs>
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
           {bundle.fileCount} files • {content?.length.toLocaleString() || 0} bytes
+          {bundle.type && ` • ${bundle.type} bundle`}
         </div>
       </CardFooter>
     </Card>

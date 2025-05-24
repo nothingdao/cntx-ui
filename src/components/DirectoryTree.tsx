@@ -12,7 +12,7 @@ import { FileTagsDisplay } from './FileTagsDisplay';
 import { useProjectConfig } from '@/contexts/ProjectConfigContext';
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useTags } from '@/contexts/TagContext';
+// import { useTags } from '@/contexts/TagContext';
 type DirectoryTreeProps = {
   files: WatchedFile[];
   onToggleStage: (paths: string[]) => void;
@@ -67,7 +67,7 @@ function FileRow({
   depth?: number;
   isSelected?: boolean;
 }) {
-  const { tags } = useTags(); // Add this import at the top: import { useTags } from '@/contexts/TagContext';
+  // const { tags } = useTags(); // Add this import at the top: import { useTags } from '@/contexts/TagContext';
 
   return (
     <div className="space-y-1">
@@ -88,7 +88,7 @@ function FileRow({
         </span>
 
         {/* Enhanced tag display with colors */}
-        {file.tags && file.tags.length > 0 && (
+        {/* {file.tags && file.tags.length > 0 && (
           <div className="flex items-center gap-1">
             {file.tags.slice(0, 3).map(tagName => (
               <div
@@ -106,7 +106,7 @@ function FileRow({
               </span>
             )}
           </div>
-        )}
+        )} */}
 
         {file.isChanged && (
           <SquareDot

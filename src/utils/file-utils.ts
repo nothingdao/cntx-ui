@@ -31,7 +31,7 @@ export function shouldIgnorePath(
       const extension = normalized.slice(1) // Keep the dot
       const result = normalizedPath.endsWith(extension)
       if (result) {
-        console.log(`Path "${path}" matches extension pattern "${original}"`)
+        // console.log(`Path "${path}" matches extension pattern "${original}"`)
       }
       return result
     }
