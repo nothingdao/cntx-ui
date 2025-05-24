@@ -1,12 +1,11 @@
 // In src/components/MainContainer.tsx
 import { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, Archive, Tags, Settings, Database } from "lucide-react";
+import { LayoutDashboard, Archive, Tags, Settings } from "lucide-react";
 import { Dashboard } from './Dashboard';
 import { BundleMainViewer } from './BundleMainViewer';
 import { TagsMainViewer } from './TagsMainViewer';
 import { ConfigPanel } from './ConfigPanel';
-import { CNTXJSONLPanel } from './CNTXJSONLPanel';
 import { useDirectory } from '@/contexts/DirectoryContext';
 import { useProjectConfig } from '@/contexts/ProjectConfigContext';
 
@@ -32,10 +31,6 @@ export function MainContainer() {
             <Archive className="mr-2 h-4 w-4" />
             Bundles
           </TabsTrigger>
-          <TabsTrigger value="jsonl" className="flex items-center">
-            <Database className="mr-2 h-4 w-4" />
-            JSONL
-          </TabsTrigger>
           <TabsTrigger value="tags" className="flex items-center">
             <Tags className="mr-2 h-4 w-4" />
             Tags
@@ -52,10 +47,6 @@ export function MainContainer() {
 
         <TabsContent value="bundles">
           <BundleMainViewer />
-        </TabsContent>
-
-        <TabsContent value="jsonl">
-          <CNTXJSONLPanel />
         </TabsContent>
 
         <TabsContent value="tags">

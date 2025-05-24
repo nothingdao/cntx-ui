@@ -1,10 +1,10 @@
-// src/contexts/BundleContext.tsx - Enhanced with tag bundle creation
+// src/contexts/BundleContext.tsx - Cleaned version focused on XML bundles only
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import type { Bundle } from '@/types/types';
 import { useDirectory } from './DirectoryContext';
 import { useFiles } from './FileContext';
 import { useProjectConfig } from './ProjectConfigContext';
-import { createBundleFile, createTagBundleFile } from '@/utils/file-state'; // createTagBundleFile needs to be added
+import { createBundleFile, createTagBundleFile } from '@/utils/file-state';
 import { createMasterBundle as createMasterBundleUtil } from '@/utils/project-utils';
 
 // Enhanced context type with tag bundle creation
@@ -12,7 +12,7 @@ type BundleContextType = {
   bundles: Bundle[];
   masterBundle: Bundle | null;
   createBundle: () => Promise<string>;
-  createTagBundle: (tagName: string) => Promise<string>; // NEW
+  createTagBundle: (tagName: string) => Promise<string>;
   updateBundle: (
     bundleName: string,
     filesToInclude: any[],
@@ -26,7 +26,7 @@ const BundleContext = createContext<BundleContextType>({
   bundles: [],
   masterBundle: null,
   createBundle: async () => '',
-  createTagBundle: async () => '', // NEW
+  createTagBundle: async () => '',
   updateBundle: async () => ({ success: false }),
   createMasterBundle: async () => { },
   loadBundles: async () => { },
@@ -232,7 +232,7 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
     }
   }, [directoryHandle, stagedFiles, loadBundles, refreshFiles]);
 
-  // NEW: Create tag-derived bundle
+  // Create tag-derived bundle
   const createTagBundle = useCallback(async (tagName: string) => {
     if (!directoryHandle) {
       throw new Error('No directory handle available');
@@ -291,7 +291,7 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
     bundles,
     masterBundle,
     createBundle,
-    createTagBundle, // NEW
+    createTagBundle,
     createMasterBundle,
     loadBundles,
   };

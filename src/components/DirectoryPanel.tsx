@@ -1,10 +1,10 @@
-// src/components/DirectoryPanel.tsx - UPDATED with working batch tagging
+// src/components/DirectoryPanel.tsx
 import { useCallback } from 'react';
 import { Filter, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from './theme/mode-toggle';
 import { DirectoryTree } from './DirectoryTree';
-import { BatchTagButton } from './BatchTagButton'; // New import
+import { BatchTagButton } from './BatchTagButton';
 
 // Import all the necessary context hooks including ProjectConfigContext
 import { useDirectory } from '@/contexts/DirectoryContext';
@@ -30,7 +30,6 @@ export function DirectoryPanel() {
     createBundle
   } = useBundles();
 
-  // IMPORTANT: Keep this to maintain the ignore patterns functionality
   const {
     ignorePatterns
   } = useProjectConfig();
@@ -72,7 +71,7 @@ export function DirectoryPanel() {
   }, []);
 
   // Log the current ignore patterns to verify they're loaded correctly
-  console.log("DirectoryPanel - Current ignore patterns:", ignorePatterns);
+  // console.log("DirectoryPanel - Current ignore patterns:", ignorePatterns);
 
   return (
     <div className="h-full flex flex-col">
@@ -87,10 +86,6 @@ export function DirectoryPanel() {
         </Button>
         <ModeToggle />
       </div>
-
-      {/* <div className="text-xs text-muted-foreground pb-4">
-        {isWatching ? 'Watching for changes...' : 'Select a directory to start watching'}
-      </div> */}
 
       {/* File actions */}
       {isWatching && (

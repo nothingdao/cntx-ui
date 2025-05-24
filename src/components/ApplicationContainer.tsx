@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FolderOpen, Zap, CheckCircle } from "lucide-react";
 
 export const ApplicationContainer = () => {
-  const { currentDirectory, directoryHandle, selectDirectory } = useDirectory();
+  const { directoryHandle, selectDirectory } = useDirectory();
   const { isProjectInitialized } = useProjectConfig();
 
   // Show the main application if we have both a directory and it's initialized
