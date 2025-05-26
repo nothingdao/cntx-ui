@@ -1,0 +1,315 @@
+# Cntx-UI Rules
+
+## Project Overview
+
+This is a React + TypeScript application that helps developers organize, tag, and bundle codebase files for AI tools. It uses the File System Access API to work directly with local files without uploads.
+
+## Core Technologies & Patterns
+
+### Tech Stack
+
+- React 18 with TypeScript (strict mode)
+- Vite for build tooling
+- Tailwind CSS + shadcn/ui components
+- File System Access API for file operations
+- React Context for state management
+- Express.js server for NPX package delivery
+
+### Architecture Principles
+
+- Context-based state management (no Redux/Zustand for global state)
+- Functional components with hooks only
+- Custom hooks for reusable logic
+- Proper TypeScript types and interfaces
+- File System Access API integration patterns
+
+## Code Style & Standards
+
+### TypeScript
+
+- Always use strict TypeScript - no `any` types
+- Define proper interfaces for all data structures
+- Use explicit return types for public functions
+- Handle File System Access API errors with proper try/catch
+- Use type guards for browser API availability
+
+### React Patterns
+
+- Functional components with hooks only (no class components)
+- Use React.memo() for performance optimization when needed
+- Custom hooks should start with `use` and follow React hooks rules
+- Proper dependency arrays in useEffect/useCallback/useMemo
+- Context providers should handle loading and error states
+
+### File Organization
+
+- Components in PascalCase: `DirectoryTree.tsx`
+- Utilities in kebab-case: `file-utils.ts`
+- Contexts end with `Context.tsx`
+- Types in `types.ts` files
+- Constants in `constants/index.ts`
+
+### Naming Conventions
+
+- Component props interfaces: `ComponentNameProps`
+- Context types: `ComponentNameContextType`
+- Utility functions: descriptive camelCase
+- File paths: use forward slashes and normalize paths
+- Bundle IDs: `bundle-timestamp-random` or `master-timestamp`
+
+## File System Access API Guidelines
+
+### Security & Permissions
+
+- Always check for File System Access API support
+- Handle permission denial gracefully
+- Use try/catch for all file operations
+- Never assume file/directory exists - always check
+
+### File Operations Patterns
+
+```typescript
+// Always wrap in try/catch
+try {
+  const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
+  // Operations...
+} catch (error) {
+  if (error.name === 'AbortError') {
+    // User cancelled
+  } else {
+    // Handle other errors
+  }
+}
+
+// Check file existence before operations
+try {
+  await dirHandle.getFileHandle('filename')
+} catch (error) {
+  if (error.name === 'NotFoundError') {
+    // File doesn't exist
+  }
+}
+```
+
+### Performance Considerations
+
+- Use async generators for large directory processing
+- Implement ignore patterns to skip unnecessary files
+- Cache file handles when possible
+- Use AbortController for cancellable operations
+
+## State Management Patterns
+
+### Context Architecture
+
+- Each major feature has its own context (Directory, File, Bundle, Tag)
+- Contexts handle their own loading/error states
+- Use context composition in `CntxProvider.tsx`
+- Avoid prop drilling - use context for shared state
+
+### State Updates
+
+- Always preserve existing data when updating state
+- Use functional updates for complex state changes
+- Handle race conditions in async operations
+- Implement optimistic updates where appropriate
+
+### Tag System
+
+- Tags are stored in `.cntx/state/file.json`
+- Never filter out files with tags during state operations
+- Always preserve existing tags when updating file state
+- Use proper tag color validation (hex colors)
+
+## Bundle System
+
+### Bundle Creation
+
+- Use XML format with proper escaping
+- Include file content, metadata, and tags
+- Generate unique bundle IDs with timestamps
+- Save both bundle file and manifest
+- Master bundles go in `bundles/master/` subdirectory
+
+### Bundle Analysis
+
+- Calculate staleness based on file modification times
+- Track which files have changed since bundle creation
+- Provide meaningful progress feedback during creation
+- Handle large bundles efficiently
+
+## UI/UX Guidelines
+
+### Component Design
+
+- Use shadcn/ui components as base
+- Implement proper loading states for async operations
+- Show progress for long-running operations
+- Provide clear error messages and recovery options
+- Use tooltips for complex features
+
+### Accessibility
+
+- Proper ARIA labels for interactive elements
+- Keyboard navigation support
+- Screen reader friendly file trees
+- Color contrast compliance
+- Focus management in modals/dialogs
+
+### Performance
+
+- Virtualize large file lists when needed
+- Implement proper memo patterns
+- Use React.Suspense for code splitting
+- Optimize re-renders with proper dependencies
+
+## Error Handling
+
+### File System Errors
+
+- Handle NotFoundError (file/directory doesn't exist)
+- Handle NotAllowedError (permission denied)
+- Handle AbortError (user cancelled operation)
+- Handle QuotaExceededError (storage limits)
+
+### User Experience
+
+- Show specific error messages, not generic "Something went wrong"
+- Provide actionable recovery steps
+- Log errors for debugging but don't expose internals to users
+- Use toast notifications for operation feedback
+
+## Testing Considerations
+
+### Browser Compatibility
+
+- File System Access API only works in Chromium browsers
+- Gracefully degrade functionality in unsupported browsers
+- Test in Chrome, Edge, and Opera
+- Provide clear browser compatibility messaging
+
+### Development Testing
+
+- Test with various project structures
+- Test ignore patterns thoroughly
+- Test tag persistence across app restarts
+- Test bundle creation with large files
+- Test error scenarios (permissions, disk space, etc.)
+
+## NPX Package Guidelines
+
+### Server Implementation
+
+- Express server serves built React app
+- Proper CORS headers for File System Access API
+- Graceful shutdown handling
+- Port conflict detection and messaging
+- ASCII art banner and helpful startup messages
+
+### Package Distribution
+
+- Include only necessary files in NPM package
+- Proper binary configuration in package.json
+- Clear installation and usage instructions
+- Version management and changelog
+
+## AI Integration Features
+
+### Cursor Rules Integration
+
+- Import existing `.cursorrules` files
+- Merge with cntx semantic organization
+- Export unified AI context
+- Store in `.cntx/config/ai-instructions.json`
+
+### Bundle Format for AI
+
+- XML structure optimized for AI consumption
+- Include directory tree visualization
+- Preserve file relationships and context
+- Tag-based organization for semantic understanding
+
+## Security Best Practices
+
+### File Access
+
+- Validate file paths and prevent directory traversal
+- Sanitize file content before processing
+- Limit file sizes for bundle operations
+- Respect user's ignore patterns
+
+### Data Storage
+
+- Store configuration in project `.cntx` directory
+- Never store sensitive information
+- Use proper JSON validation for config files
+- Handle corrupted state files gracefully
+
+## Development Workflow
+
+### Code Organization
+
+- Keep components focused and single-purpose
+- Extract complex logic into custom hooks
+- Use proper TypeScript generics for reusable code
+- Document complex algorithms and business logic
+
+### Debugging
+
+- Use descriptive console.log messages with emoji prefixes
+- Implement proper error boundaries
+- Use React DevTools for component debugging
+- Monitor File System API calls in browser DevTools
+
+### Git Integration
+
+- Commit `.cntx` directory for team AI context sharing
+- Proper gitignore for development files
+- Meaningful commit messages following conventional commits
+- Feature branch workflow for new functionality
+
+## Common Patterns to Follow
+
+### Context Updates
+
+```typescript
+// Always preserve existing state
+const updateState = useCallback((updates: Partial<State>) => {
+  setState((current) => ({ ...current, ...updates }))
+}, [])
+```
+
+### File Processing
+
+```typescript
+// Handle ignore patterns properly
+const shouldIgnore = (path: string) => {
+  return ignorePatterns.some((pattern) => {
+    if (pattern.startsWith('*.')) {
+      return path.endsWith(pattern.slice(1))
+    }
+    return path.includes(pattern)
+  })
+}
+```
+
+### Error Boundaries
+
+```typescript
+// Provide meaningful error context
+catch (error) {
+  console.error(`Failed to ${operation}:`, error);
+  setError(`Unable to ${operation}. ${getHelpfulMessage(error)}`);
+}
+```
+
+## When Making Changes
+
+1. **File System Operations**: Always test with different file structures and edge cases
+2. **State Updates**: Ensure tag preservation and data consistency
+3. **UI Changes**: Test with various screen sizes and accessibility tools
+4. **Bundle Creation**: Verify XML format and proper escaping
+5. **Context Changes**: Check for proper provider composition and cleanup
+6. **Error Handling**: Test error scenarios and recovery paths
+
+Remember: This app helps developers create better AI context, so the code itself should be exemplary and well-documented for AI tools to understand and work with effectively.

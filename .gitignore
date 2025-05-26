@@ -146,7 +146,6 @@ tmp/
 temp/
 
 # Project specific
-.cntx/
 PROMPTS.md
 *.local
 

@@ -1,0 +1,712 @@
+{
+  "lastAccessed": "2025-05-26T20:53:41.115Z",
+  "files": {
+    ".cursor/rules": {
+      "name": "rules",
+      "directory": ".cursor",
+      "lastModified": "2025-05-26T20:50:24.992Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "bin/cntx.cjs": {
+      "name": "cntx.cjs",
+      "directory": "bin",
+      "lastModified": "2025-05-22T03:34:42.887Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/types/types.ts": {
+      "name": "types.ts",
+      "directory": "src/types",
+      "lastModified": "2025-05-24T03:09:39.942Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/CursorRulesContext.tsx": {
+      "name": "CursorRulesContext.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-26T20:45:30.198Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/CntxProvider.tsx": {
+      "name": "CntxProvider.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-26T20:15:22.286Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/DirectoryContext.tsx": {
+      "name": "DirectoryContext.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-22T05:01:23.326Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/FileContext.tsx": {
+      "name": "FileContext.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-23T22:36:54.817Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/TagContext.tsx": {
+      "name": "TagContext.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-23T20:54:30.123Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/BundleContext.tsx": {
+      "name": "BundleContext.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-24T19:57:35.212Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/types.ts": {
+      "name": "types.ts",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-23T22:44:49.097Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/contexts/ProjectConfigContext.tsx": {
+      "name": "ProjectConfigContext.tsx",
+      "directory": "src/contexts",
+      "lastModified": "2025-05-23T22:42:10.887Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/constants/index.ts": {
+      "name": "index.ts",
+      "directory": "src/constants",
+      "lastModified": "2025-05-22T01:02:49.262Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/utils/file-state.ts": {
+      "name": "file-state.ts",
+      "directory": "src/utils",
+      "lastModified": "2025-05-24T03:08:30.531Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/utils/cursor-rules.ts": {
+      "name": "cursor-rules.ts",
+      "directory": "src/utils",
+      "lastModified": "2025-05-26T20:42:29.289Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/utils/project-utils.ts": {
+      "name": "project-utils.ts",
+      "directory": "src/utils",
+      "lastModified": "2025-05-23T22:49:28.833Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/utils/file-utils.ts": {
+      "name": "file-utils.ts",
+      "directory": "src/utils",
+      "lastModified": "2025-05-24T03:55:53.587Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/utils/bundle-utils.ts": {
+      "name": "bundle-utils.ts",
+      "directory": "src/utils",
+      "lastModified": "2025-05-22T00:43:04.234Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/utils/directory-tree.ts": {
+      "name": "directory-tree.ts",
+      "directory": "src/utils",
+      "lastModified": "2025-05-22T00:43:04.234Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/scroll-area.tsx": {
+      "name": "scroll-area.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/card.tsx": {
+      "name": "card.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/tooltip.tsx": {
+      "name": "tooltip.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/alert.tsx": {
+      "name": "alert.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/dialog.tsx": {
+      "name": "dialog.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/alert-dialog.tsx": {
+      "name": "alert-dialog.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/badge.tsx": {
+      "name": "badge.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/table.tsx": {
+      "name": "table.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/button.tsx": {
+      "name": "button.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/tabs.tsx": {
+      "name": "tabs.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/popover.tsx": {
+      "name": "popover.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/avatar.tsx": {
+      "name": "avatar.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/input.tsx": {
+      "name": "input.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/select.tsx": {
+      "name": "select.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/textarea.tsx": {
+      "name": "textarea.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-23T22:47:27.005Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/separator.tsx": {
+      "name": "separator.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-23T22:47:54.986Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/dropdown-menu.tsx": {
+      "name": "dropdown-menu.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/checkbox.tsx": {
+      "name": "checkbox.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/switch.tsx": {
+      "name": "switch.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-23T18:22:51.626Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/label.tsx": {
+      "name": "label.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-23T18:23:43.006Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ui/progress.tsx": {
+      "name": "progress.tsx",
+      "directory": "src/components/ui",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/theme/theme-provider.tsx": {
+      "name": "theme-provider.tsx",
+      "directory": "src/components/theme",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/theme/mode-toggle.tsx": {
+      "name": "mode-toggle.tsx",
+      "directory": "src/components/theme",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/CursorRulesPanel.tsx": {
+      "name": "CursorRulesPanel.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-26T20:46:09.564Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/MainContainer.tsx": {
+      "name": "MainContainer.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T19:56:48.720Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/BatchTagButton.tsx": {
+      "name": "BatchTagButton.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-23T20:54:02.995Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/Dashboard.tsx": {
+      "name": "Dashboard.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-22T01:06:03.516Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/BundleMainViewer.tsx": {
+      "name": "BundleMainViewer.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T03:58:34.360Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/BundleAnalysisBadge.tsx": {
+      "name": "BundleAnalysisBadge.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-22T00:43:04.224Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ApplicationContainer.tsx": {
+      "name": "ApplicationContainer.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T20:08:22.997Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/ConfigPanel.tsx": {
+      "name": "ConfigPanel.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-26T20:46:58.098Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/BundleView.tsx": {
+      "name": "BundleView.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T03:41:11.821Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/TagsMainViewer.tsx": {
+      "name": "TagsMainViewer.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/FileTagsDisplay.tsx": {
+      "name": "FileTagsDisplay.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T02:34:56.591Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/InitializationModal.tsx": {
+      "name": "InitializationModal.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-26T20:48:53.009Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/DirectoryPanel.tsx": {
+      "name": "DirectoryPanel.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T20:26:27.809Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/TagBundleCreator.tsx": {
+      "name": "TagBundleCreator.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T03:33:41.692Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/MasterBundleButton.tsx": {
+      "name": "MasterBundleButton.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-22T00:43:04.226Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/components/DirectoryTree.tsx": {
+      "name": "DirectoryTree.tsx",
+      "directory": "src/components",
+      "lastModified": "2025-05-24T02:36:43.535Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/lib/utils.ts": {
+      "name": "utils.ts",
+      "directory": "src/lib",
+      "lastModified": "2025-05-22T00:43:04.232Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/index.css": {
+      "name": "index.css",
+      "directory": "src",
+      "lastModified": "2025-05-22T00:43:04.232Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/vite-env.d.ts": {
+      "name": "vite-env.d.ts",
+      "directory": "src",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/App.tsx": {
+      "name": "App.tsx",
+      "directory": "src",
+      "lastModified": "2025-05-23T18:26:41.778Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "src/main.tsx": {
+      "name": "main.tsx",
+      "directory": "src",
+      "lastModified": "2025-05-22T00:43:04.233Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    ".npmignore": {
+      "name": ".npmignore",
+      "directory": "Root",
+      "lastModified": "2025-05-22T02:29:16.100Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "tailwind.config.js": {
+      "name": "tailwind.config.js",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "tsconfig.app.json": {
+      "name": "tsconfig.app.json",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "tsconfig.node.json": {
+      "name": "tsconfig.node.json",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "tsconfig.app.tsbuildinfo": {
+      "name": "tsconfig.app.tsbuildinfo",
+      "directory": "Root",
+      "lastModified": "2025-05-22T02:29:37.045Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "README.md": {
+      "name": "README.md",
+      "directory": "Root",
+      "lastModified": "2025-05-26T20:52:15.437Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    ".gitignore": {
+      "name": ".gitignore",
+      "directory": "Root",
+      "lastModified": "2025-05-26T20:53:40.040Z",
+      "isChanged": true,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "index.html": {
+      "name": "index.html",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:06.221Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "package.json": {
+      "name": "package.json",
+      "directory": "Root",
+      "lastModified": "2025-05-24T20:54:59.589Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "components.json": {
+      "name": "components.json",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.221Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "tsconfig.json": {
+      "name": "tsconfig.json",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "eslint.config.js": {
+      "name": "eslint.config.js",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.221Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "vite.config.ts": {
+      "name": "vite.config.ts",
+      "directory": "Root",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "tsconfig.node.tsbuildinfo": {
+      "name": "tsconfig.node.tsbuildinfo",
+      "directory": "Root",
+      "lastModified": "2025-05-22T02:29:37.202Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "postcss.config.cjs": {
+      "name": "postcss.config.cjs",
+      "directory": "Root",
+      "lastModified": "2025-05-22T02:39:25.675Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    },
+    "DEVELOPMENT.md": {
+      "name": "DEVELOPMENT.md",
+      "directory": "Root",
+      "lastModified": "2025-05-24T20:29:51.011Z",
+      "isChanged": false,
+      "isStaged": false,
+      "masterBundleId": "master-2025-05-26T20-52-58-828Z",
+      "tags": []
+    }
+  },
+  "masterBundle": {
+    "id": "master-2025-05-26T20-52-58-828Z",
+    "created": "2025-05-26T20:52:58.828Z",
+    "fileCount": 78
+  }
+}
