@@ -1,5 +1,5 @@
 // src/components/TagsMainViewer.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -7,14 +7,6 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,10 +14,7 @@ import {
   Pencil,
   Plus,
   Search,
-  Tag,
   Trash2,
-  X,
-  Check,
   FileText
 } from "lucide-react";
 import { useTags } from '@/contexts/TagContext';
@@ -120,13 +109,12 @@ export function TagsMainViewer() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Tag Manager</span>
-            <Button
-              onClick={() => setIsAddingTag(true)}
-              className="flex items-center"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Tag
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsAddingTag(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Tag
+              </Button>
+            </div>
           </CardTitle>
           <CardDescription>
             Manage file tags and view tagged files

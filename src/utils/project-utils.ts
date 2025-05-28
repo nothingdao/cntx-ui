@@ -123,7 +123,8 @@ import { ProjectMetadata } from '@/contexts/types'
 export async function createMasterBundle(
   files: WatchedFile[],
   cntxDir: FileSystemDirectoryHandle,
-  ignorePatterns: string[] = []
+  ignorePatterns: string[] = [],
+  existingBundleId?: string // Add this parameter for updates
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {
   try {
     console.log('🔄 Starting master bundle creation with tag preservation...')
@@ -137,8 +138,16 @@ export async function createMasterBundle(
       'files'
     )
 
-    const bundleId = `master-${new Date().toISOString().replace(/[:.]/g, '-')}`
+    const bundleId =
+      existingBundleId ||
+      `master-${new Date().toISOString().replace(/[:.]/g, '-')}`
     const timestamp = new Date().toISOString()
+
+    console.log(
+      `🔄 ${
+        existingBundleId ? 'Updating' : 'Creating'
+      } master bundle: ${bundleId}`
+    )
 
     // Filter files based on ignore patterns BUT preserve important tagged files
     const filteredFiles = files.filter((file) => {

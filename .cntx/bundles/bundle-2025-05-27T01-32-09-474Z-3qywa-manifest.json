@@ -1,0 +1,22 @@
+{
+  "id": "bundle-2025-05-27T01-32-09-474Z-3qywa",
+  "created": "2025-05-27T01:32:09.474Z",
+  "fileCount": 2,
+  "files": [
+    {
+      "path": ".npmignore",
+      "lastModified": "2025-05-22T02:29:16.100Z",
+      "tags": [
+        "configuration",
+        "cli-package"
+      ]
+    },
+    {
+      "path": ".gitignore",
+      "lastModified": "2025-05-26T20:53:40.040Z",
+      "tags": [
+        "configuration"
+      ]
+    }
+  ]
+}

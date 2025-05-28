@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bundle id="tag-app-core-2025-05-27T01-27-52-945Z" created="2025-05-27T01:27:52.945Z" fileCount="7" type="tag-derived">
+  
+  <metadata>
+    <bundleType>tag-derived</bundleType>
+    <derivedFromTag>app-core</derivedFromTag>
+    <description>Auto-generated bundle for files tagged with "app-core"</description>
+    <totalFiles>7</totalFiles>
+    <createdAt>2025-05-27T01:27:52.945Z</createdAt>
+  </metadata>
+
+  <documents>
+    
+    <document>
+      <source>bin/cntx.cjs</source>
+      <tags>cli-package,app-core</tags>
+      <metadata>
+        <size>2896</size>
+        <lastModified>2025-05-22T03:34:42.887Z</lastModified>
+        <extension>cjs</extension>
+        <directory>bin</directory>
+      </metadata>
+      <content>#!/usr/bin/env node
+
+const express = require(&#39;express&#39;);
+const path = require(&#39;path&#39;);
+const open = require(&#39;open&#39;);
+const fs = require(&#39;fs&#39;);
+
+const app = express();
+const port = 3000;
+
+// ASCII art banner
+const banner = `
+┌─────────────────────────────────────────┐
+│                                         │
+│   ██████╗███╗   ██╗████████╗██╗  ██╗    │
+│  ██╔════╝████╗  ██║╚══██╔══╝╚██╗██╔╝    │
+│  ██║     ██╔██╗ ██║   ██║    ╚███╔╝     │
+│  ██║     ██║╚██╗██║   ██║    ██╔██╗     │
+│  ╚██████╗██║ ╚████║   ██║   ██╔╝ ██╗    │
+│   ╚═════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝    │
+│                                         │
+│    File bundling &amp; tagging for AI      │
+│                                         │
+└─────────────────────────────────────────┘
+`;
+
+console.log(banner);
+console.log(&#39;🚀 Starting Cntx...\n&#39;);
+
+// Check if dist directory exists
+const distPath = path.join(__dirname, &#39;../dist&#39;);
+if (!fs.existsSync(distPath)) {
+  console.error(&#39;❌ Error: Build files not found.&#39;);
+  console.log(&#39;This usually means the package was not built properly.&#39;);
+  console.log(&#39;If you\&#39;re developing locally, run: npm run build&#39;);
+  process.exit(1);
+}
+
+// Serve the built React app with proper headers for File System Access API
+app.use((req, res, next) =&gt; {
+  // Set headers needed for File System Access API
+  res.setHeader(&#39;Cross-Origin-Embedder-Policy&#39;, &#39;require-corp&#39;);
+  res.setHeader(&#39;Cross-Origin-Opener-Policy&#39;, &#39;same-origin&#39;);
+  next();
+});
+
+app.use(express.static(distPath));
+
+// Handle React Router routes
+app.get(&#39;*&#39;, (req, res) =&gt; {
+  res.sendFile(path.join(distPath, &#39;index.html&#39;));
+});
+
+// Handle server shutdown gracefully
+process.on(&#39;SIGINT&#39;, () =&gt; {
+  console.log(&#39;\n👋 Shutting down Cntx...&#39;);
+  process.exit(0);
+});
+
+process.on(&#39;SIGTERM&#39;, () =&gt; {
+  console.log(&#39;\n👋 Shutting down Cntx...&#39;);
+  process.exit(0);
+});
+
+const server = app.listen(port, () =&gt; {
+  console.log(`🌐 Server running at http://localhost:${port}`);
+  console.log(&#39;📁 Select a directory to get started!&#39;);
+  console.log(&#39;\n💡 Tips:&#39;);
+  console.log(&#39;   • Use Chromium-based browsers (Chrome, Edge, Opera)&#39;);
+  console.log(&#39;   • File System Access API required for full functionality&#39;);
+  console.log(&#39;   • Press Ctrl+C to stop the server\n&#39;);
+
+  // Open browser
+  console.log(&#39;🔗 Opening browser...&#39;);
+  open(`http://localhost:${port}`).catch(() =&gt; {
+    console.log(&#39;Could not open browser automatically.&#39;);
+    console.log(`Please visit: http://localhost:${port}`);
+  });
+});
+
+// Handle port already in use
+server.on(&#39;error&#39;, (err) =&gt; {
+  if (err.code === &#39;EADDRINUSE&#39;) {
+    console.error(`❌ Port ${port} is already in use.`);
+    console.log(&#39;Either:&#39;);
+    console.log(`  • Stop the process using port ${port}`);
+    console.log(`  • Visit http://localhost:${port} if Cntx is already running`);
+    process.exit(1);
+  } else {
+    console.error(&#39;❌ Server error:&#39;, err.message);
+    process.exit(1);
+  }
+});
+</content>
+    </document>
+
+    <document>
+      <source>src/contexts/CntxProvider.tsx</source>
+      <tags>state-context,app-core</tags>
+      <metadata>
+        <size>848</size>
+        <lastModified>2025-05-26T20:15:22.286Z</lastModified>
+        <extension>tsx</extension>
+        <directory>src/contexts</directory>
+      </metadata>
+      <content>// Updated src/contexts/CntxProvider.tsx
+import React from &#39;react&#39;;
+import { DirectoryProvider } from &#39;./DirectoryContext&#39;;
+import { ProjectConfigProvider } from &#39;./ProjectConfigContext&#39;;
+import { FileProvider } from &#39;./FileContext&#39;;
+import { BundleProvider } from &#39;./BundleContext&#39;;
+import { TagProvider } from &#39;./TagContext&#39;;
+import { CursorRulesProvider } from &#39;./CursorRulesContext&#39;;
+
+export function CntxProvider({ children }: { children: React.ReactNode }) {
+  return (
+    &lt;DirectoryProvider&gt;
+      &lt;ProjectConfigProvider&gt;
+        &lt;FileProvider&gt;
+          &lt;BundleProvider&gt;
+            &lt;TagProvider&gt;
+              &lt;CursorRulesProvider&gt;
+                {children}
+              &lt;/CursorRulesProvider&gt;
+            &lt;/TagProvider&gt;
+          &lt;/BundleProvider&gt;
+        &lt;/FileProvider&gt;
+      &lt;/ProjectConfigProvider&gt;
+    &lt;/DirectoryProvider&gt;
+  );
+}
+</content>
+    </document>
+
+    <document>
+      <source>src/components/ApplicationContainer.tsx</source>
+      <tags>ui-components,app-core</tags>
+      <metadata>
+        <size>3624</size>
+        <lastModified>2025-05-26T22:23:35.952Z</lastModified>
+        <extension>tsx</extension>
+        <directory>src/components</directory>
+      </metadata>
+      <content>// src/components/ApplicationContainer.tsx
+import { DirectoryPanel } from &quot;./DirectoryPanel&quot;;
+import { MainContainer } from &quot;./MainContainer&quot;;
+import { useDirectory } from &#39;@/contexts/DirectoryContext&#39;;
+import { useProjectConfig } from &#39;@/contexts/ProjectConfigContext&#39;;
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from &quot;@/components/ui/card&quot;;
+import { Button } from &quot;@/components/ui/button&quot;;
+import { FolderOpen, Zap, CheckCircle } from &quot;lucide-react&quot;;
+
+export const ApplicationContainer = () =&gt; {
+  const { directoryHandle, selectDirectory } = useDirectory();
+  const { isProjectInitialized } = useProjectConfig();
+
+  // Show the main application if we have both a directory and it&#39;s initialized
+  if (directoryHandle &amp;&amp; isProjectInitialized) {
+    return (
+      &lt;div className=&quot;grid grid-cols-[1fr,3fr] h-screen mx-auto gap-4&quot;&gt;
+        {/* Left Column - Directory Panel */}
+        &lt;div className=&quot;p-4 border-r&quot;&gt;
+          &lt;DirectoryPanel /&gt;
+        &lt;/div&gt;
+
+        {/* Main Column - App Interface */}
+        &lt;div className=&quot;flex flex-col h-full overflow-auto&quot;&gt;
+          &lt;MainContainer /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  // Show the setup screen
+  return (
+    &lt;div className=&quot;h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20&quot;&gt;
+      &lt;Card className=&quot;w-full max-w-2xl mx-4&quot;&gt;
+        &lt;CardHeader className=&quot;text-center pb-6&quot;&gt;
+          &lt;CardTitle className=&quot;text-4xl&quot;&gt;cntx-ui&lt;/CardTitle&gt;
+          &lt;CardDescription className=&quot;text-base&quot;&gt;
+            File bundling and tagging tool for AI development workflows
+          &lt;/CardDescription&gt;
+        &lt;/CardHeader&gt;
+
+        &lt;CardContent className=&quot;space-y-6&quot;&gt;
+          &lt;div className=&quot;text-center space-y-4&quot;&gt;
+            &lt;h3 className=&quot;text-lg font-medium&quot;&gt;Get Started&lt;/h3&gt;
+            &lt;p className=&quot;text-muted-foreground&quot;&gt;
+              Select a directory to begin. If you&#39;ve used Cntx before,
+              previously initialized projects will be ready to use immediately.
+            &lt;/p&gt;
+          &lt;/div&gt;
+
+          &lt;div className=&quot;grid md:grid-cols-2 gap-4 mt-6&quot;&gt;
+            &lt;div className=&quot;flex items-start space-x-3 p-4 rounded-lg border bg-card&quot;&gt;
+              &lt;Zap className=&quot;w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0&quot; /&gt;
+              &lt;div&gt;
+                &lt;h4 className=&quot;font-medium text-sm&quot;&gt;New Projects&lt;/h4&gt;
+                &lt;p className=&quot;text-xs text-muted-foreground mt-1&quot;&gt;
+                  Initialize any directory to start tracking files and creating bundles
+                &lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;flex items-start space-x-3 p-4 rounded-lg border bg-card&quot;&gt;
+              &lt;CheckCircle className=&quot;w-5 h-5 text-green-500 mt-0.5 flex-shrink-0&quot; /&gt;
+              &lt;div&gt;
+                &lt;h4 className=&quot;font-medium text-sm&quot;&gt;Existing Projects&lt;/h4&gt;
+                &lt;p className=&quot;text-xs text-muted-foreground mt-1&quot;&gt;
+                  Projects with a &lt;code className=&quot;text-xs bg-muted px-1 rounded&quot;&gt;.cntx&lt;/code&gt; folder load instantly
+                &lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div className=&quot;pt-4 flex flex-col items-center space-y-4&quot;&gt;
+            &lt;Button
+              onClick={selectDirectory}
+              size=&quot;lg&quot;
+              className=&quot;w-full max-w-sm&quot;
+            &gt;
+              &lt;FolderOpen className=&quot;mr-2 h-5 w-5&quot; /&gt;
+              Select Directory
+            &lt;/Button&gt;
+            &lt;p className=&quot;text-xs text-muted-foreground text-center&quot;&gt;
+              Choose any directory to get started
+            &lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/CardContent&gt;
+      &lt;/Card&gt;
+    &lt;/div&gt;
+  );
+};
+</content>
+    </document>
+
+    <document>
+      <source>src/components/MainContainer.tsx</source>
+      <tags>ui-components,app-core</tags>
+      <metadata>
+        <size>2132</size>
+        <lastModified>2025-05-24T19:56:48.720Z</lastModified>
+        <extension>tsx</extension>
+        <directory>src/components</directory>
+      </metadata>
+      <content>// In src/components/MainContainer.tsx
+import { useState } from &#39;react&#39;;
+import { Tabs, TabsList, TabsTrigger, TabsContent } from &quot;@/components/ui/tabs&quot;;
+import { LayoutDashboard, Archive, Tags, Settings } from &quot;lucide-react&quot;;
+import { Dashboard } from &#39;./Dashboard&#39;;
+import { BundleMainViewer } from &#39;./BundleMainViewer&#39;;
+import { TagsMainViewer } from &#39;./TagsMainViewer&#39;;
+import { ConfigPanel } from &#39;./ConfigPanel&#39;;
+import { useDirectory } from &#39;@/contexts/DirectoryContext&#39;;
+import { useProjectConfig } from &#39;@/contexts/ProjectConfigContext&#39;;
+
+export function MainContainer() {
+  const [activeTab, setActiveTab] = useState(&#39;dashboard&#39;);
+  const { isWatching } = useDirectory();
+  const { isProjectInitialized } = useProjectConfig();
+
+  // Don&#39;t show tabs until project is initialized and watching
+  if (!isWatching || !isProjectInitialized) {
+    return null; // Let Dashboard handle the setup flow
+  }
+
+  return (
+    &lt;div className=&quot;p-4&quot;&gt;
+      &lt;Tabs defaultValue=&quot;dashboard&quot; onValueChange={setActiveTab} value={activeTab}&gt;
+        &lt;TabsList className=&quot;mb-4&quot;&gt;
+          &lt;TabsTrigger value=&quot;dashboard&quot; className=&quot;flex items-center&quot;&gt;
+            &lt;LayoutDashboard className=&quot;mr-2 h-4 w-4&quot; /&gt;
+            Dashboard
+          &lt;/TabsTrigger&gt;
+          &lt;TabsTrigger value=&quot;bundles&quot; className=&quot;flex items-center&quot;&gt;
+            &lt;Archive className=&quot;mr-2 h-4 w-4&quot; /&gt;
+            Bundles
+          &lt;/TabsTrigger&gt;
+          &lt;TabsTrigger value=&quot;tags&quot; className=&quot;flex items-center&quot;&gt;
+            &lt;Tags className=&quot;mr-2 h-4 w-4&quot; /&gt;
+            Tags
+          &lt;/TabsTrigger&gt;
+          &lt;TabsTrigger value=&quot;config&quot; className=&quot;flex items-center&quot;&gt;
+            &lt;Settings className=&quot;mr-2 h-4 w-4&quot; /&gt;
+            Config
+          &lt;/TabsTrigger&gt;
+        &lt;/TabsList&gt;
+
+        &lt;TabsContent value=&quot;dashboard&quot;&gt;
+          &lt;Dashboard /&gt;
+        &lt;/TabsContent&gt;
+
+        &lt;TabsContent value=&quot;bundles&quot;&gt;
+          &lt;BundleMainViewer /&gt;
+        &lt;/TabsContent&gt;
+
+        &lt;TabsContent value=&quot;tags&quot;&gt;
+          &lt;TagsMainViewer /&gt;
+        &lt;/TabsContent&gt;
+
+        &lt;TabsContent value=&quot;config&quot;&gt;
+          &lt;ConfigPanel /&gt;
+        &lt;/TabsContent&gt;
+      &lt;/Tabs&gt;
+    &lt;/div&gt;
+  );
+}
+</content>
+    </document>
+
+    <document>
+      <source>src/main.tsx</source>
+      <tags>app-core</tags>
+      <metadata>
+        <size>246</size>
+        <lastModified>2025-05-22T00:43:04.233Z</lastModified>
+        <extension>tsx</extension>
+        <directory>src</directory>
+      </metadata>
+      <content>// src/main.tsx
+import { StrictMode } from &#39;react&#39;
+import { createRoot } from &#39;react-dom/client&#39;
+import &#39;./index.css&#39;
+import App from &#39;./App.tsx&#39;
+
+createRoot(document.getElementById(&#39;root&#39;)!).render(
+  &lt;StrictMode&gt;
+    &lt;App /&gt;
+  &lt;/StrictMode&gt;,
+)
+</content>
+    </document>
+
+    <document>
+      <source>src/App.tsx</source>
+      <tags>app-core,ui-components</tags>
+      <metadata>
+        <size>624</size>
+        <lastModified>2025-05-23T18:26:41.778Z</lastModified>
+        <extension>tsx</extension>
+        <directory>src</directory>
+      </metadata>
+      <content>// src/App.tsx
+import { QueryClient, QueryClientProvider } from &#39;@tanstack/react-query&#39;;
+import { CntxProvider } from &#39;@/contexts/CntxProvider&#39;;
+import { ApplicationContainer } from &#39;./components/ApplicationContainer&#39;;
+import { ThemeProvider } from &quot;@/components/theme/theme-provider&quot;
+
+const queryClient = new QueryClient();
+
+export default function App() {
+  return (
+    &lt;QueryClientProvider client={queryClient}&gt;
+      &lt;CntxProvider&gt;
+        &lt;ThemeProvider defaultTheme=&quot;dark&quot; storageKey=&quot;vite-ui-theme&quot;&gt;
+          &lt;ApplicationContainer /&gt;
+        &lt;/ThemeProvider&gt;
+      &lt;/CntxProvider&gt;
+    &lt;/QueryClientProvider&gt;
+  );
+}
+</content>
+    </document>
+
+    <document>
+      <source>index.html</source>
+      <tags>app-core</tags>
+      <metadata>
+        <size>427</size>
+        <lastModified>2025-05-22T00:43:06.221Z</lastModified>
+        <extension>html</extension>
+        <directory>Root</directory>
+      </metadata>
+      <content>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot; /&gt;
+    &lt;link
+      rel=&quot;icon&quot;
+      type=&quot;image/svg+xml&quot;
+      href=&quot;/cntx.svg&quot;
+    /&gt;
+    &lt;meta
+      name=&quot;viewport&quot;
+      content=&quot;width=device-width, initial-scale=1.0&quot;
+    /&gt;
+    &lt;title&gt;cntx - from @nothingdao&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+    &lt;script
+      type=&quot;module&quot;
+      src=&quot;/src/main.tsx&quot;
+    &gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</content>
+    </document>
+    
+  </documents>
+
+</bundle>

@@ -1,13 +1,12 @@
 // src/components/BundleAnalysisBadge.tsx
-// SIMPLIFIED VERSION THAT JUST WORKS
+// FIXED VERSION - Properly handles bundle content parsing and staleness calculation
 
 import { useEffect, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDirectory } from '@/contexts/DirectoryContext';
 import { useFiles } from '@/contexts/FileContext';
-import type { Bundle } from '@/types/types';
-// import { loadBundleManifest, analyzeBundleHealth, getStalenessColor } from '@/utils/bundle-utils';
+import type { Bundle, BundleType } from '@/types/types';
 import { FileEdit, FileCheck, Loader2, AlertCircle } from "lucide-react";
 
 type BundleAnalysisBadgeProps = {
@@ -23,10 +22,91 @@ export function BundleAnalysisBadge({ bundle }: BundleAnalysisBadgeProps) {
   const [tooltipText, setTooltipText] = useState("");
   const [Icon, setIcon] = useState(FileCheck);
 
+  // FIXED: Safe bundle file access that handles all bundle types
+  const getBundleFileHandle = async (bundle: Bundle): Promise<FileSystemFileHandle | null> => {
+    if (!directoryHandle) return null;
+
+    try {
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
+
+      // Determine bundle type with fallbacks for existing bundles
+      let bundleType: BundleType = bundle.type;
+      if (!bundleType) {
+        if (bundle.name.startsWith('master-')) {
+          bundleType = 'master';
+        } else if (bundle.derivedFromTag) {
+          bundleType = 'tag-derived';
+        } else {
+          bundleType = 'custom';
+        }
+      }
+
+      // Handle different bundle types with proper path resolution
+      switch (bundleType) {
+        case 'master': {
+          const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
+          return await masterDir.getFileHandle(bundle.name);
+        }
+        case 'tag-derived': {
+          const tagName = bundle.derivedFromTag;
+          if (!tagName) {
+            console.error('Tag-derived bundle missing derivedFromTag:', bundle);
+            throw new Error('Tag-derived bundle is missing tag information');
+          }
+          const tagBundlesDir = await bundlesDir.getDirectoryHandle('tag-bundles');
+          const tagDir = await tagBundlesDir.getDirectoryHandle(tagName);
+          return await tagDir.getFileHandle(bundle.name);
+        }
+        case 'custom':
+        default: {
+          return await bundlesDir.getFileHandle(bundle.name);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to get file handle for bundle ${bundle.name}:`, error);
+      throw error;
+    }
+  };
+
+  // FIXED: Improved bundle content parsing
+  const extractFilePaths = (content: string): string[] => {
+    const filePaths: string[] = [];
+
+    // Try multiple formats to handle different bundle structures
+
+    // 1. Try new XML format with <document><source> tags
+    const documentRegex = /<document[^>]*>[\s\S]*?<source>(.*?)<\/source>[\s\S]*?<\/document>/g;
+    let match;
+    while ((match = documentRegex.exec(content)) !== null) {
+      if (match[1] && match[1].trim()) {
+        filePaths.push(match[1].trim());
+      }
+    }
+
+    // 2. If no documents found, try simpler <source> tag format
+    if (filePaths.length === 0) {
+      const sourceRegex = /<source>(.*?)<\/source>/g;
+      while ((match = sourceRegex.exec(content)) !== null) {
+        if (match[1] && match[1].trim()) {
+          filePaths.push(match[1].trim());
+        }
+      }
+    }
+
+    // 3. Debug logging
+    console.log(`Bundle ${bundle.name}: Found ${filePaths.length} file paths`);
+    if (filePaths.length > 0) {
+      console.log(`Sample paths:`, filePaths.slice(0, 3));
+    }
+
+    return filePaths;
+  };
+
   useEffect(() => {
     let isMounted = true;
 
-    async function checkBundle() {
+    async function analyzeBundleStaleness() {
       if (!directoryHandle || !bundle || !isMounted) {
         setLoading(false);
         return;
@@ -35,87 +115,102 @@ export function BundleAnalysisBadge({ bundle }: BundleAnalysisBadgeProps) {
       setLoading(true);
 
       try {
-        // Get the same info that the expanded view uses
-        const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+        console.log(`🔍 Analyzing bundle: ${bundle.name} (type: ${bundle.type || 'unknown'})`);
 
-        // Calculate how many stale files by directly checking files in bundle
-        // This is a simplified approach that just works
-        let staleFileCount = 0;
-        let freshFileCount = 0;
-
-        // Process the bundle file directly to get content
-        let bundleFile;
-        let bundleContent = "";
-
-        try {
-          const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
-
-          if (bundle.name.startsWith('master-')) {
-            const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
-            bundleFile = await masterDir.getFileHandle(bundle.name);
-          } else {
-            bundleFile = await bundlesDir.getFileHandle(bundle.name);
-          }
-
-          if (bundleFile) {
-            const file = await bundleFile.getFile();
-            bundleContent = await file.text();
-          }
-        } catch (e) {
-          console.log("Could not read bundle content directly:", e);
+        // Get bundle file handle using the same logic as BundleView
+        const bundleHandle = await getBundleFileHandle(bundle);
+        if (!bundleHandle) {
+          throw new Error('Could not access bundle file');
         }
+
+        // Read bundle content
+        const file = await bundleHandle.getFile();
+        const content = await file.text();
+        console.log(`📄 Bundle content loaded: ${content.length} characters`);
 
         // Extract file paths from bundle content
-        const regex = /<source>(.*?)<\/source>/g;
-        const filePaths: string[] = [];
-        let match;
+        const bundleFilePaths = extractFilePaths(content);
+        console.log(`📋 Extracted ${bundleFilePaths.length} file paths from bundle`);
 
-        while ((match = regex.exec(bundleContent)) !== null) {
-          filePaths.push(match[1]);
+        if (bundleFilePaths.length === 0) {
+          console.warn(`⚠️ No file paths found in bundle ${bundle.name}`);
+          setLabel("No Files");
+          setColor("#94a3b8");
+          setTooltipText("Bundle contains no traceable files");
+          setIcon(AlertCircle);
+          return;
         }
 
-        // Check each file in the bundle against current files
-        filePaths.forEach(path => {
-          const watchedFile = watchedFiles.find(f => f.path === path);
-          if (watchedFile) {
-            if (watchedFile.isChanged) {
-              staleFileCount++;
-            } else {
-              freshFileCount++;
-            }
+        // Calculate staleness by comparing with current watched files
+        let staleCount = 0;
+        let freshCount = 0;
+        let missingCount = 0;
+
+        bundleFilePaths.forEach(bundlePath => {
+          const currentFile = watchedFiles.find(f => f.path === bundlePath);
+
+          if (!currentFile) {
+            // File in bundle but not in current watched files (might be deleted or filtered out)
+            missingCount++;
+          } else if (currentFile.isChanged) {
+            // File exists and has been modified since last bundle
+            staleCount++;
+          } else {
+            // File exists and hasn't been modified
+            freshCount++;
           }
         });
 
-        // Calculate percentage
-        const totalFiles = staleFileCount + freshFileCount;
+        const totalTrackedFiles = staleCount + freshCount;
+        const stalenessPercentage = totalTrackedFiles > 0 ? Math.round((staleCount / totalTrackedFiles) * 100) : 0;
 
-        // Determine label based on what the expanded view shows
-        if (staleFileCount === 0) {
+        console.log(`📊 Bundle analysis: ${freshCount} fresh, ${staleCount} stale, ${missingCount} missing`);
+        console.log(`📈 Staleness: ${stalenessPercentage}%`);
+
+        // Determine display based on staleness
+        if (totalTrackedFiles === 0) {
+          setLabel("Unknown");
+          setIcon(AlertCircle);
+          setColor("#94a3b8");
+          setTooltipText(`Cannot determine staleness (${missingCount} files not tracked)`);
+        } else if (stalenessPercentage === 0) {
           setLabel("Fresh");
           setIcon(FileCheck);
-          setColor("green");
-          setTooltipText(`100% fresh - ${freshFileCount} files unchanged`);
-        } else if (staleFileCount / totalFiles <= 0.25) {
+          setColor("#22c55e");
+          setTooltipText(`100% fresh - ${freshCount} files unchanged`);
+        } else if (stalenessPercentage <= 25) {
           setLabel("Mostly Fresh");
           setIcon(FileCheck);
-          setColor("green");
-          setTooltipText(`${Math.round((freshFileCount / totalFiles) * 100)}% fresh - ${staleFileCount} files changed`);
-        } else if (staleFileCount / totalFiles <= 0.75) {
+          setColor("#22c55e");
+          setTooltipText(`${100 - stalenessPercentage}% fresh - ${staleCount} of ${totalTrackedFiles} files changed`);
+        } else if (stalenessPercentage <= 50) {
+          setLabel("Some Stale");
+          setIcon(FileEdit);
+          setColor("#f59e0b");
+          setTooltipText(`${stalenessPercentage}% stale - ${staleCount} of ${totalTrackedFiles} files changed`);
+        } else if (stalenessPercentage <= 75) {
           setLabel("Stale");
           setIcon(FileEdit);
-          setColor("orange");
-          setTooltipText(`${Math.round((staleFileCount / totalFiles) * 100)}% stale - ${staleFileCount} files changed`);
+          setColor("#f97316");
+          setTooltipText(`${stalenessPercentage}% stale - ${staleCount} of ${totalTrackedFiles} files changed`);
         } else {
           setLabel("Very Stale");
           setIcon(AlertCircle);
-          setColor("red");
-          setTooltipText(`${Math.round((staleFileCount / totalFiles) * 100)}% stale - ${staleFileCount} files changed`);
+          setColor("#ef4444");
+          setTooltipText(`${stalenessPercentage}% stale - ${staleCount} of ${totalTrackedFiles} files changed`);
         }
+
+        // Add missing files info to tooltip if relevant
+        if (missingCount > 0) {
+          setTooltipText(prev => `${prev} (${missingCount} files not tracked)`);
+        }
+
       } catch (error) {
-        console.error(`Simple badge error for ${bundle.name}:`, error);
-        setLabel("Status");
-        setColor("#888");
-        setTooltipText("Click to view details");
+        console.error(`❌ Error analyzing bundle ${bundle.name}:`, error);
+        setLabel("Error");
+        setColor("#ef4444");
+        setTooltipText(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setIcon(AlertCircle);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -123,7 +218,7 @@ export function BundleAnalysisBadge({ bundle }: BundleAnalysisBadgeProps) {
       }
     }
 
-    checkBundle();
+    analyzeBundleStaleness();
 
     return () => {
       isMounted = false;
@@ -143,15 +238,19 @@ export function BundleAnalysisBadge({ bundle }: BundleAnalysisBadgeProps) {
             className="flex items-center gap-1 cursor-default"
             style={{
               borderColor: color,
-              backgroundColor: `${color}22`
+              backgroundColor: `${color}15`,
+              color: color
             }}
           >
-            <Icon className="h-3 w-3" style={{ color }} />
+            <Icon className="h-3 w-3" />
             <span>{label}</span>
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
-          <div className="text-xs">{tooltipText}</div>
+          <div className="text-xs max-w-xs">
+            <div className="font-medium">{bundle.name}</div>
+            <div className="mt-1">{tooltipText}</div>
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

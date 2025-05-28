@@ -39,7 +39,6 @@ import { useTags } from '@/contexts/TagContext';
 import { Bundle, BundleManifest, BundleType } from '@/types/types';
 import {
   analyzeBundleHealth,
-  loadBundleManifest,
   getStalenessColor,
   getSortedTags
 } from '@/utils/bundle-utils';
@@ -54,8 +53,7 @@ import {
   ChevronDown,
   AlertTriangle,
   FileCheck,
-  FileEdit,
-  FolderOpen
+  FileEdit
 } from "lucide-react";
 
 interface BundleViewProps {

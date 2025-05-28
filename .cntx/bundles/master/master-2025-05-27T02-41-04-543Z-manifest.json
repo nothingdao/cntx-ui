@@ -1,0 +1,595 @@
+{
+  "id": "master-2025-05-27T02-41-04-543Z",
+  "created": "2025-05-27T02:41:04.543Z",
+  "fileCount": 78,
+  "files": [
+    {
+      "path": ".cursor/rules",
+      "lastModified": "2025-05-26T20:50:24.992Z",
+      "tags": [
+        "configuration",
+        "external-apis"
+      ]
+    },
+    {
+      "path": "bin/cntx.cjs",
+      "lastModified": "2025-05-22T03:34:42.887Z",
+      "tags": [
+        "cli-package",
+        "app-core"
+      ]
+    },
+    {
+      "path": "src/types/types.ts",
+      "lastModified": "2025-05-24T03:09:39.942Z",
+      "tags": [
+        "types-definitions"
+      ]
+    },
+    {
+      "path": "src/contexts/BundleContext.tsx",
+      "lastModified": "2025-05-27T01:30:25.308Z",
+      "tags": [
+        "state-context",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/contexts/CntxProvider.tsx",
+      "lastModified": "2025-05-26T20:15:22.286Z",
+      "tags": [
+        "state-context",
+        "app-core"
+      ]
+    },
+    {
+      "path": "src/contexts/ProjectConfigContext.tsx",
+      "lastModified": "2025-05-23T22:42:10.887Z",
+      "tags": [
+        "state-context",
+        "configuration"
+      ]
+    },
+    {
+      "path": "src/contexts/CursorRulesContext.tsx",
+      "lastModified": "2025-05-26T20:45:30.198Z",
+      "tags": [
+        "state-context",
+        "external-apis"
+      ]
+    },
+    {
+      "path": "src/contexts/DirectoryContext.tsx",
+      "lastModified": "2025-05-22T05:01:23.326Z",
+      "tags": [
+        "state-context",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/contexts/TagContext.tsx",
+      "lastModified": "2025-05-23T20:54:30.123Z",
+      "tags": [
+        "state-context",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/contexts/types.ts",
+      "lastModified": "2025-05-23T22:44:49.097Z",
+      "tags": [
+        "types-definitions",
+        "state-context"
+      ]
+    },
+    {
+      "path": "src/contexts/FileContext.tsx",
+      "lastModified": "2025-05-23T22:36:54.817Z",
+      "tags": [
+        "state-context",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/constants/index.ts",
+      "lastModified": "2025-05-22T01:02:49.262Z",
+      "tags": [
+        "configuration",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/utils/project-utils.ts",
+      "lastModified": "2025-05-27T01:25:17.353Z",
+      "tags": [
+        "business-logic",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/utils/file-utils.ts",
+      "lastModified": "2025-05-24T03:55:53.587Z",
+      "tags": [
+        "business-logic",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/utils/bundle-utils.ts",
+      "lastModified": "2025-05-22T00:43:04.234Z",
+      "tags": [
+        "business-logic",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/utils/directory-tree.ts",
+      "lastModified": "2025-05-22T00:43:04.234Z",
+      "tags": [
+        "business-logic",
+        "ui-components"
+      ]
+    },
+    {
+      "path": "src/utils/cursor-rules.ts",
+      "lastModified": "2025-05-26T20:42:29.289Z",
+      "tags": [
+        "business-logic",
+        "external-apis"
+      ]
+    },
+    {
+      "path": "src/utils/file-state.ts",
+      "lastModified": "2025-05-27T01:22:50.035Z",
+      "tags": [
+        "business-logic",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/ui/alert-dialog.tsx",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/popover.tsx",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/card.tsx",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/switch.tsx",
+      "lastModified": "2025-05-23T18:22:51.626Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/avatar.tsx",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/table.tsx",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/separator.tsx",
+      "lastModified": "2025-05-23T22:47:54.986Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/alert.tsx",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/tooltip.tsx",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/label.tsx",
+      "lastModified": "2025-05-23T18:23:43.006Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/select.tsx",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/progress.tsx",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/input.tsx",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/dropdown-menu.tsx",
+      "lastModified": "2025-05-22T00:43:04.229Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/badge.tsx",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/scroll-area.tsx",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/textarea.tsx",
+      "lastModified": "2025-05-23T22:47:27.005Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/checkbox.tsx",
+      "lastModified": "2025-05-22T00:43:04.228Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/ui/tabs.tsx",
+      "lastModified": "2025-05-22T00:43:04.230Z",
+      "tags": [
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "src/components/theme/theme-provider.tsx",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "tags": [
+        "theming-styles",
+        "ui-components"
+      ]
+    },
+    {
+      "path": "src/components/theme/mode-toggle.tsx",
+      "lastModified": "2025-05-22T00:43:04.227Z",
+      "tags": [
+        "theming-styles",
+        "ui-components"
+      ]
+    },
+    {
+      "path": "src/components/MainContainer.tsx",
+      "lastModified": "2025-05-24T19:56:48.720Z",
+      "tags": [
+        "ui-components",
+        "app-core"
+      ]
+    },
+    {
+      "path": "src/components/ConfigPanel.tsx",
+      "lastModified": "2025-05-26T20:46:58.098Z",
+      "tags": [
+        "ui-components",
+        "configuration"
+      ]
+    },
+    {
+      "path": "src/components/BundleView.tsx",
+      "lastModified": "2025-05-27T01:52:28.567Z",
+      "tags": [
+        "ui-components",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/FileTagsDisplay.tsx",
+      "lastModified": "2025-05-26T22:06:10.781Z",
+      "tags": [
+        "ui-components",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/components/BundleAnalysisBadge.tsx",
+      "lastModified": "2025-05-27T00:51:18.714Z",
+      "tags": [
+        "ui-components",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/components/BatchTagButton.tsx",
+      "lastModified": "2025-05-23T20:54:02.995Z",
+      "tags": [
+        "ui-components",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/components/DirectoryTree.tsx",
+      "lastModified": "2025-05-24T02:36:43.535Z",
+      "tags": [
+        "ui-components",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/CursorRulesPanel.tsx",
+      "lastModified": "2025-05-26T20:46:09.564Z",
+      "tags": [
+        "ui-components",
+        "external-apis"
+      ]
+    },
+    {
+      "path": "src/components/TagBundleCreator.tsx",
+      "lastModified": "2025-05-24T03:33:41.692Z",
+      "tags": [
+        "ui-components",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/MasterBundleButton.tsx",
+      "lastModified": "2025-05-22T00:43:04.226Z",
+      "tags": [
+        "ui-components",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/TagsMainViewer.tsx",
+      "lastModified": "2025-05-27T01:34:02.830Z",
+      "tags": [
+        "ui-components",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/components/ApplicationContainer.tsx",
+      "lastModified": "2025-05-27T02:36:49.585Z",
+      "tags": [
+        "ui-components",
+        "app-core"
+      ]
+    },
+    {
+      "path": "src/components/DirectoryPanel.tsx",
+      "lastModified": "2025-05-24T20:26:27.809Z",
+      "tags": [
+        "ui-components",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/InitializationModal.tsx",
+      "lastModified": "2025-05-26T20:48:53.009Z",
+      "tags": [
+        "ui-components",
+        "configuration"
+      ]
+    },
+    {
+      "path": "src/components/BundleMainViewer.tsx",
+      "lastModified": "2025-05-27T01:14:16.369Z",
+      "tags": [
+        "ui-components",
+        "file-operations"
+      ]
+    },
+    {
+      "path": "src/components/Dashboard.tsx",
+      "lastModified": "2025-05-27T00:42:48.858Z",
+      "tags": [
+        "ui-components",
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "lastModified": "2025-05-22T00:43:04.232Z",
+      "tags": [
+        "business-logic"
+      ]
+    },
+    {
+      "path": "src/App.tsx",
+      "lastModified": "2025-05-23T18:26:41.778Z",
+      "tags": [
+        "app-core",
+        "ui-components"
+      ]
+    },
+    {
+      "path": "src/index.css",
+      "lastModified": "2025-05-22T00:43:04.232Z",
+      "tags": [
+        "theming-styles"
+      ]
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "tags": [
+        "types-definitions",
+        "configuration"
+      ]
+    },
+    {
+      "path": "src/main.tsx",
+      "lastModified": "2025-05-22T00:43:04.233Z",
+      "tags": [
+        "app-core"
+      ]
+    },
+    {
+      "path": "tsconfig.node.json",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "tailwind.config.js",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "tags": [
+        "configuration",
+        "theming-styles"
+      ]
+    },
+    {
+      "path": "tsconfig.app.tsbuildinfo",
+      "lastModified": "2025-05-22T02:29:37.045Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "tsconfig.json",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "vite.config.ts",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": ".gitignore",
+      "lastModified": "2025-05-26T20:53:40.040Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "README.md",
+      "lastModified": "2025-05-26T20:52:15.437Z",
+      "tags": [
+        "documentation"
+      ]
+    },
+    {
+      "path": "tsconfig.node.tsbuildinfo",
+      "lastModified": "2025-05-22T02:29:37.202Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "tsconfig.app.json",
+      "lastModified": "2025-05-22T00:43:04.235Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "index.html",
+      "lastModified": "2025-05-22T00:43:06.221Z",
+      "tags": [
+        "app-core"
+      ]
+    },
+    {
+      "path": ".npmignore",
+      "lastModified": "2025-05-22T02:29:16.100Z",
+      "tags": [
+        "configuration",
+        "cli-package"
+      ]
+    },
+    {
+      "path": "postcss.config.cjs",
+      "lastModified": "2025-05-22T02:39:25.675Z",
+      "tags": [
+        "configuration",
+        "theming-styles"
+      ]
+    },
+    {
+      "path": "package.json",
+      "lastModified": "2025-05-24T20:54:59.589Z",
+      "tags": [
+        "configuration",
+        "cli-package"
+      ]
+    },
+    {
+      "path": "eslint.config.js",
+      "lastModified": "2025-05-22T00:43:04.221Z",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "path": "components.json",
+      "lastModified": "2025-05-22T00:43:04.221Z",
+      "tags": [
+        "configuration",
+        "ui-primitives"
+      ]
+    },
+    {
+      "path": "DEVELOPMENT.md",
+      "lastModified": "2025-05-24T20:29:51.011Z",
+      "tags": [
+        "documentation"
+      ]
+    }
+  ]
+}

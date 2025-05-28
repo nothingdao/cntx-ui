@@ -1,4 +1,4 @@
-// src/components/Dashboard.tsx
+// src/components/Dashboard.tsx - Updated to remove redundant MasterBundleButton
 import { useEffect } from 'react';
 import { useDirectory } from '@/contexts/DirectoryContext';
 import { useFiles } from '@/contexts/FileContext';
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MasterBundleButton } from './MasterBundleButton';
 
 import {
   BarChart,
@@ -23,7 +22,6 @@ import {
   FileCheck,
   FileEdit,
   RefreshCw,
-  Settings,
   AlertTriangle,
   Archive
 } from "lucide-react";
@@ -270,7 +268,6 @@ export function Dashboard() {
                 <Archive className="mr-2 h-5 w-5" />
                 Bundle Overview
               </span>
-              {/* <MasterBundleButton /> */}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -318,10 +315,9 @@ export function Dashboard() {
                   <AlertTriangle className="h-10 w-10 mx-auto text-amber-500" />
                   <h3 className="text-lg font-medium">No Master Bundle</h3>
                   <p className="text-sm text-muted-foreground max-w-md">
-                    Create a master bundle to track file changes and establish a snapshot of your project.
+                    Create a master bundle to track file changes and establish a snapshot of your project. Go to the Bundles tab to get started.
                   </p>
                 </div>
-                <MasterBundleButton />
               </div>
             )}
           </CardContent>
@@ -402,20 +398,6 @@ export function Dashboard() {
           <CardFooter className="flex justify-between">
             <div className="text-xs text-muted-foreground">
               Total: {metrics.totalFiles} files tracked
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" asChild>
-                <a href="#" onClick={() => window.location.href = '#tags'}>
-                  <Tag className="mr-2 h-4 w-4" />
-                  Manage Tags
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href="#" onClick={() => window.location.href = '#config'}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Project Config
-                </a>
-              </Button>
             </div>
           </CardFooter>
         </Card>

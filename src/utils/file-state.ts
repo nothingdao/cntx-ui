@@ -356,12 +356,13 @@ ${tagsString}
 export async function createTagBundleFile(
   files: WatchedFile[],
   tagName: string,
-  cntxDir: FileSystemDirectoryHandle
+  cntxDir: FileSystemDirectoryHandle,
+  existingBundleId?: string // Add this parameter for updates
 ): Promise<{ success: boolean; error?: string; bundleId?: string }> {
   try {
-    const bundleId = `tag-${tagName}-${new Date()
-      .toISOString()
-      .replace(/[:.]/g, '-')}`
+    const bundleId =
+      existingBundleId ||
+      `tag-${tagName}-${new Date().toISOString().replace(/[:.]/g, '-')}`
     const timestamp = new Date().toISOString()
 
     console.log(
@@ -468,12 +469,13 @@ ${bundleContent.join('\n\n')}
       await writable.close()
       console.log(`💾 Tag bundle file written: ${bundleId}.txt`)
     } catch (error) {
-      console.error('Error writing tag bundle file:', error)
+      console.error('❌ Error creating tag bundle:', error)
       return {
         success: false,
-        error: `Failed to write tag bundle file: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create tag bundle',
       }
     }
 

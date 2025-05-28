@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bundle id="tag-documentation-2025-05-27T01-27-35-373Z" created="2025-05-27T01:27:35.373Z" fileCount="2" type="tag-derived">
+  
+  <metadata>
+    <bundleType>tag-derived</bundleType>
+    <derivedFromTag>documentation</derivedFromTag>
+    <description>Auto-generated bundle for files tagged with "documentation"</description>
+    <totalFiles>2</totalFiles>
+    <createdAt>2025-05-27T01:27:35.373Z</createdAt>
+  </metadata>
+
+  <documents>
+    
+    <document>
+      <source>README.md</source>
+      <tags>documentation</tags>
+      <metadata>
+        <size>6299</size>
+        <lastModified>2025-05-26T20:52:15.437Z</lastModified>
+        <extension>md</extension>
+        <directory>Root</directory>
+      </metadata>
+      <content># cntx-ui
+
+&gt; File bundling and tagging tool for AI development workflows
+
+cntx helps developers organize, tag, and bundle their codebase files for AI tools like ChatGPT, Claude, and Cursor. Create structured bundles with semantic tags to provide better context to AI systems.
+
+## ✨ Features
+
+- 📁 **Direct File System Access** - Work with your files without uploads
+- 🏷️ **Smart Tagging System** - Organize files with semantic tags
+- 📦 **Bundle Creation** - Package files for AI consumption with metadata
+- 🔍 **Bundle Analysis** - Track file changes and staleness over time
+- 🎯 **Master Bundles** - Create snapshots to track project evolution
+- 🤝 **Cursor Integration** - Import and sync with existing Cursor AI rules
+- 🎨 **Modern Interface** - Clean, responsive web UI
+- ⚡ **Real-time Updates** - Watch for file changes automatically
+- 👥 **Team AI Context** - Share AI-friendly project context via git
+
+## 🚀 Quick Start
+
+```bash
+npx cntx-ui
+```
+
+That&#39;s it! Cntx will start a local server and open in your browser.
+
+## 📋 Requirements
+
+- **Node.js 16+**
+- **Chromium-based browser** (Chrome, Edge, Opera, Brave)
+  - Firefox and Safari don&#39;t support File System Access API yet
+
+## 🎯 How to Use
+
+### 1. Initialize Your Project
+
+1. Run `npx cntx-ui`
+2. Click &quot;Select Directory&quot; and choose your project folder
+3. Initialize the project (creates a `.cntx` folder with configuration)
+4. **Commit the `.cntx` directory** - this shares your project&#39;s AI context with your team!
+
+### 2. Import Existing AI Rules (Optional)
+
+If you&#39;re already using Cursor or other AI tools:
+
+- Go to the **Config** tab → **Cursor Rules**
+- Cntx will automatically detect existing `.cursorrules` files
+- Import them to merge with cntx&#39;s semantic organization
+- Creates unified AI context that works across tools
+
+### 3. Organize with Tags
+
+- Use the **Tags** tab to create semantic tags (e.g., &quot;core&quot;, &quot;ui-components&quot;, &quot;utilities&quot;)
+- Tag files using the paint brush icon in the file tree
+- Tags help categorize files by their role in your project
+
+### 4. Create Bundles
+
+- Select files in the directory tree (checkbox selection)
+- Click &quot;Bundle&quot; to create a package for AI tools
+- Bundles include file content, metadata, and your tag organization
+
+### 5. Master Bundles
+
+- Create a &quot;Master Bundle&quot; to snapshot your entire project
+- Use this as a reference point to track which files have changed
+- Perfect for providing complete project context to AI tools
+
+### 6. Bundle Analysis
+
+- View bundle freshness and file staleness
+- See which files have changed since the last bundle
+- Analyze tag distribution and file types
+
+## 🤝 Team Collaboration
+
+**Commit Your `.cntx` Directory!** Unlike typical build artifacts, your `.cntx` directory contains valuable team context:
+
+- **Shared semantic organization** - Everyone uses the same file tags
+- **AI context standards** - Unified rules for AI tools across the team
+- **Project understanding** - New team members get instant context
+- **Documentation as code** - Your project describes itself
+
+### What Gets Committed
+
+```
+your-project/
+├── .cntx/
+│   ├── config/
+│   │   ├── tags.ts                  # Team&#39;s tag taxonomy
+│   │   ├── project-metadata.json    # Project info for AI
+│   │   ├── ai-instructions.json     # Imported AI rules
+│   │   └── pattern-ignore.ts        # Agreed ignore patterns
+│   ├── bundles/
+│   │   ├── master/                  # Reference snapshots
+│   │   └── [other-bundles]/         # Useful reference bundles
+│   └── state/
+│       └── file.json                # Current file tags &amp; organization
+└── your-code-files...
+```
+
+## 🔧 Browser Compatibility
+
+Cntx uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), which requires:
+
+- ✅ Chrome 86+
+- ✅ Edge 86+
+- ✅ Opera 72+
+- ✅ Other Chromium-based browsers
+- ❌ Firefox (not yet supported)
+- ❌ Safari (not yet supported)
+
+## 🤖 AI Integration
+
+Cntx bundles are designed for AI tools:
+
+- **Structured XML format** with file metadata
+- **Directory tree visualization**
+- **Tag-based organization** for context
+- **Change tracking** to highlight recent modifications
+- **Ignore patterns** to exclude irrelevant files
+- **Cursor Rules compatibility** for seamless AI workflow integration
+
+### Universal AI Context
+
+Cntx creates a **repository-first AI context system**:
+
+- Import existing `.cursorrules` or `.cursor/` configurations
+- Merge with cntx&#39;s semantic file organization
+- Export unified context that works across AI tools
+- Share via git for consistent team AI interactions
+
+## 💡 Tips
+
+- **Tag Strategy**: Use tags like &quot;core&quot;, &quot;ui-components&quot;, &quot;utilities&quot;, &quot;configuration&quot;
+- **Ignore Patterns**: Configure patterns to exclude `node_modules`, build files, etc.
+- **Master Bundles**: Create these periodically to track project evolution
+- **File Selection**: Use Shift+click for range selection in the file tree
+- **Team Context**: Commit `.cntx` so your team shares the same AI context
+- **Cursor Integration**: Import existing Cursor rules to bridge your current AI workflow
+
+## 🚀 Workflow Examples
+
+### For Individual Developers
+
+1. Initialize project with cntx
+2. Import existing Cursor rules
+3. Tag files semantically
+4. Create bundles for AI consumption
+5. Commit `.cntx` for future reference
+
+### For Teams
+
+1. One team member initializes with cntx
+2. Establishes tagging conventions and AI rules
+3. Commits `.cntx` directory
+4. Team members clone and get instant AI context
+5. Collaborative tagging through pull requests
+6. Shared understanding of codebase organization
+
+## 🐛 Troubleshooting
+
+**&quot;No files found&quot;**
+
+- Check your ignore patterns in the Config tab
+- Ensure you&#39;re using a supported browser
+
+**&quot;Failed to access directory&quot;**
+
+- Grant file system permissions when prompted
+- Try refreshing and re-selecting the directory
+
+**Bundle creation fails**
+
+- Ensure files are staged (selected with checkboxes)
+- Check browser console for detailed errors
+
+**Cursor rules not detected**
+
+- Verify `.cursorrules` file exists in project root
+- Check for `.cursor/` directory with configuration files
+
+## 📄 License
+
+MIT
+
+## 🤝 Contributing
+
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for local development setup.
+
+---
+
+**Made for AI-powered development workflows** 🤖✨  
+**Now with team collaboration and universal AI context** 👥🌐
+</content>
+    </document>
+
+    <document>
+      <source>DEVELOPMENT.md</source>
+      <tags>documentation</tags>
+      <metadata>
+        <size>7862</size>
+        <lastModified>2025-05-24T20:29:51.011Z</lastModified>
+        <extension>md</extension>
+        <directory>Root</directory>
+      </metadata>
+      <content># Development Guide
+
+This guide covers how to set up Cntx for local development, contribute to the project, and understand the codebase architecture.
+
+## 🛠️ Local Development Setup
+
+### Prerequisites
+
+- Node.js 16+
+- npm or yarn
+- Git
+- Chromium-based browser for testing
+
+### Clone and Install
+
+```bash
+git clone https://github.com/nothingdao/cntx-ui.git
+cd cntx-ui
+npm install
+```
+
+### Development Commands
+
+```bash
+# Start development server with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+
+# Run linting
+npm run lint
+
+# Test the NPX package locally
+npm run start
+```
+
+### Development Workflow
+
+1. **Start dev server**: `npm run dev`
+2. **Open**: http://localhost:5173
+3. **Make changes** - Hot reload is enabled
+4. **Test with File System API** - Use Chrome/Edge for full functionality
+
+## 🏗️ Project Architecture
+
+### Tech Stack
+
+- **React 18** with TypeScript
+- **Vite** for build tooling
+- **Tailwind CSS** for styling
+- **shadcn/ui** for UI components
+- **Lucide React** for icons
+- **File System Access API** for file operations
+
+### Folder Structure
+
+```
+src/
+├── components/           # React components
+│   ├── ui/              # shadcn/ui components
+│   ├── theme/           # Theme system
+│   ├── Dashboard.tsx    # Main dashboard
+│   ├── DirectoryTree.tsx # File tree component
+│   ├── BundleView.tsx   # Bundle analysis
+│   └── ...
+├── contexts/            # React Context providers
+│   ├── DirectoryContext.tsx  # File system state
+│   ├── BundleContext.tsx     # Bundle management
+│   ├── TagContext.tsx        # Tag system
+│   └── ...
+├── utils/               # Business logic
+│   ├── file-utils.ts    # File system operations
+│   ├── bundle-utils.ts  # Bundle creation/analysis
+│   ├── project-utils.ts # Project initialization
+│   └── ...
+├── types/               # TypeScript definitions
+├── constants/           # App constants
+└── lib/                 # Utility libraries
+```
+
+### Key Components
+
+#### Contexts (State Management)
+
+- **DirectoryContext**: File system access and watching
+- **FileContext**: File tracking and staging
+- **BundleContext**: Bundle creation and management
+- **TagContext**: Tag system and file tagging
+- **ProjectConfigContext**: Project configuration
+
+#### Core Components
+
+- **DirectoryTree**: File browser with selection
+- **Dashboard**: Overview and project metrics
+- **BundleMainViewer**: Bundle list and management
+- **BundleView**: Detailed bundle analysis
+- **TagsMainViewer**: Tag management interface
+
+#### Utilities
+
+- **file-utils.ts**: File system operations, ignore patterns
+- **bundle-utils.ts**: Bundle creation, analysis, manifest handling
+- **project-utils.ts**: Project initialization, master bundles
+- **directory-tree.ts**: Tree structure generation
+
+## 🔧 File System Access API
+
+This project heavily uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API):
+
+### Key APIs Used
+
+```typescript
+// Directory picker
+const dirHandle = await window.showDirectoryPicker({ mode: &#39;readwrite&#39; })
+
+// Read files
+const fileHandle = await dirHandle.getFileHandle(&#39;file.txt&#39;)
+const file = await fileHandle.getFile()
+const content = await file.text()
+
+// Write files
+const writable = await fileHandle.createWritable()
+await writable.write(content)
+await writable.close()
+
+// Iterate directory
+for await (const entry of dirHandle.values()) {
+  if (entry.kind === &#39;file&#39;) {
+    // Handle file
+  }
+}
+```
+
+### Browser Support Limitations
+
+- Only works in Chromium-based browsers
+- Requires HTTPS in production (localhost is fine for dev)
+- User must grant permissions for each directory
+
+## 🏷️ Tag System
+
+### Tag Configuration
+
+Tags are defined in `.cntx/config/tags.ts`:
+
+```typescript
+export default {
+  core: {
+    color: &#39;#dc2626&#39;,
+    description: &#39;Essential application files&#39;,
+  },
+  &#39;ui-components&#39;: {
+    color: &#39;#0ea5e9&#39;,
+    description: &#39;Reusable UI components&#39;,
+  },
+} as const
+```
+
+### Tag Assignment
+
+File tags are stored in `.cntx/state/file.json`:
+
+```json
+{
+  &quot;files&quot;: {
+    &quot;src/App.tsx&quot;: {
+      &quot;tags&quot;: [&quot;core&quot;],
+      &quot;lastModified&quot;: &quot;2025-01-01T00:00:00.000Z&quot;,
+      &quot;isStaged&quot;: false
+    }
+  }
+}
+```
+
+## 📦 Bundle System
+
+### Bundle Format
+
+Bundles are XML files with structured content:
+
+```xml
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;bundle id=&quot;bundle-id&quot; created=&quot;timestamp&quot; fileCount=&quot;5&quot;&gt;
+  &lt;metadata&gt;
+    &lt;projectName&gt;my-project&lt;/projectName&gt;
+    &lt;ignorePatterns&gt;
+      &lt;pattern&gt;node_modules&lt;/pattern&gt;
+    &lt;/ignorePatterns&gt;
+  &lt;/metadata&gt;
+
+  &lt;directoryTree&gt;&lt;!-- ASCII tree --&gt;&lt;/directoryTree&gt;
+
+  &lt;documents&gt;
+    &lt;document&gt;
+      &lt;source&gt;src/App.tsx&lt;/source&gt;
+      &lt;tags&gt;core&lt;/tags&gt;
+      &lt;content&gt;&lt;!-- file content --&gt;&lt;/content&gt;
+    &lt;/document&gt;
+  &lt;/documents&gt;
+&lt;/bundle&gt;
+```
+
+### Bundle Types
+
+- **Regular Bundles**: Selected files for specific tasks
+- **Master Bundles**: Complete project snapshots for tracking changes
+
+## 🧪 Testing &amp; Debugging
+
+### Local Testing
+
+```bash
+# Test the built package locally
+npm run build
+npm pack
+npm install -g cntx-ui-1.0.0.tgz
+cntx-ui
+
+# Or test without installing
+node bin/cntx.mjs
+```
+
+### Debugging Tips
+
+- Use Chrome DevTools for File System API debugging
+- Check console for file operation errors
+- Monitor network tab for bundle size issues
+- Use React DevTools for component state
+
+### Common Issues
+
+- **CORS errors**: Ensure running on localhost or HTTPS
+- **File access denied**: Check browser permissions
+- **Bundle too large**: Review ignore patterns
+- **Performance issues**: Optimize file watching
+
+## 📝 Code Style
+
+### TypeScript
+
+- Strict mode enabled
+- Explicit return types for public functions
+- Proper error handling with try/catch
+
+### React Patterns
+
+- Functional components with hooks
+- Context for state management
+- Custom hooks for reusable logic
+- Proper dependency arrays in useEffect
+
+### File Naming
+
+- PascalCase for components: `DirectoryTree.tsx`
+- kebab-case for utilities: `file-utils.ts`
+- camelCase for functions and variables
+
+## 🚀 Building &amp; Publishing
+
+### Build Process
+
+```bash
+# Full build with type checking
+npm run build
+
+# Quick build (skips TypeScript for faster iteration)
+vite build
+```
+
+### Publishing to NPM
+
+```bash
+# Bump version
+npm version patch|minor|major
+
+# Build and publish
+npm run build
+npm publish
+
+# Push changes and tags
+git push &amp;&amp; git push --tags
+```
+
+### NPX Package Structure
+
+```
+dist/           # Built React app
+bin/cntx.mjs   # NPX entry point (Express server)
+package.json   # Package metadata
+README.md      # User documentation
+```
+
+## 🤝 Contributing
+
+### Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Add tests if applicable
+5. Update documentation
+6. Submit a pull request
+
+### Commit Message Format
+
+```
+feat: add new bundle analysis feature
+fix: resolve file watching memory leak
+docs: update API documentation
+refactor: simplify bundle creation logic
+```
+
+### Areas for Contribution
+
+- **Browser compatibility**: Firefox/Safari support when APIs available
+- **Performance**: Large directory handling optimization
+- **Features**: New bundle formats, advanced filtering
+- **UI/UX**: Accessibility improvements, mobile support
+- **Documentation**: Tutorials, examples, API docs
+
+## 🐛 Known Issues
+
+- File System Access API only works in Chromium browsers
+- Large directories (&gt;1000 files) may have performance issues
+- Bundle sizes can grow large with many files
+- No offline functionality (requires file system access)
+
+## 📚 Resources
+
+- [File System Access API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
+- [React Context Best Practices](https://react.dev/reference/react/useContext)
+- [Vite Build Configuration](https://vitejs.dev/config/)
+- [shadcn/ui Components](https://ui.shadcn.com/)
+
+---
+
+Happy trails!
+</content>
+    </document>
+    
+  </documents>
+
+</bundle>

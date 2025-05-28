@@ -50,7 +50,7 @@ export function FileTagsDisplay({ filePath, className = '' }: FileTagsDisplayPro
         return (
           <div
             key={tagName}
-            className="h-2 w-2 rounded-full"
+            className="h-1 w-1 rounded-full"
             style={{ backgroundColor: tagConfig?.color || '#94a3b8' }}
             title={tagName}
           />

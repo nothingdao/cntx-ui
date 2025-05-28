@@ -1,4 +1,4 @@
-// src/contexts/BundleContext.tsx - Cleaned version focused on XML bundles only
+// src/contexts/BundleContext.tsx - Enhanced with update operations
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import type { Bundle } from '@/types/types';
 import { useDirectory } from './DirectoryContext';
@@ -7,7 +7,7 @@ import { useProjectConfig } from './ProjectConfigContext';
 import { createBundleFile, createTagBundleFile } from '@/utils/file-state';
 import { createMasterBundle as createMasterBundleUtil } from '@/utils/project-utils';
 
-// Enhanced context type with tag bundle creation
+// Enhanced context type with update operations
 type BundleContextType = {
   bundles: Bundle[];
   masterBundle: Bundle | null;
@@ -233,7 +233,7 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
   }, [directoryHandle, stagedFiles, loadBundles, refreshFiles]);
 
   // Create tag-derived bundle
-  const createTagBundle = useCallback(async (tagName: string) => {
+  const createTagBundle = useCallback(async (tagName: string, existingBundle?: Bundle) => {
     if (!directoryHandle) {
       throw new Error('No directory handle available');
     }
@@ -246,46 +246,72 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
         throw new Error(`No files found with tag "${tagName}"`);
       }
 
-      console.log(`Creating tag bundle for "${tagName}" with ${filesWithTag.length} files`);
-      const result = await createTagBundleFile(filesWithTag, tagName, cntxDir);
+      console.log(`${existingBundle ? 'Updating' : 'Creating'} tag bundle for "${tagName}" with ${filesWithTag.length} files`);
+
+      // Pass existing bundle ID if updating
+      const result = await createTagBundleFile(
+        filesWithTag,
+        tagName,
+        cntxDir,
+        existingBundle?.id // Pass existing ID for updates
+      );
 
       if (result.success) {
-        console.log('Tag bundle created successfully:', result.bundleId);
-        await loadBundles(); // Refresh bundle list
-        await refreshFiles(); // Refresh file states
+        console.log(`Tag bundle ${existingBundle ? 'updated' : 'created'} successfully:`, result.bundleId);
+        await loadBundles();
+        await refreshFiles();
         return result.bundleId || '';
       }
 
       throw new Error(result.error || 'Failed to create tag bundle');
     } catch (error) {
-      console.error('Error creating tag bundle:', error);
-      throw error; // Rethrow for UI handling
+      console.error('Error with tag bundle:', error);
+      throw error;
     }
   }, [directoryHandle, watchedFiles, loadBundles, refreshFiles]);
 
-  const createMasterBundle = useCallback(async () => {
+  const createMasterBundle = useCallback(async (existingBundle?: Bundle) => {
     if (!directoryHandle) {
       console.error('No directory handle available');
       return;
     }
 
     try {
-      console.log('Creating master bundle with ignore patterns:', ignorePatterns);
+      console.log(`${existingBundle ? 'Updating' : 'Creating'} master bundle with ignore patterns:`, ignorePatterns);
       const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
-      const result = await createMasterBundleUtil(watchedFiles, cntxDir, ignorePatterns);
+
+      // Pass existing bundle ID if updating
+      const result = await createMasterBundleUtil(
+        watchedFiles,
+        cntxDir,
+        ignorePatterns,
+        existingBundle?.id // Pass existing ID for updates
+      );
 
       if (result.success) {
-        console.log('Master bundle created successfully!');
-        await loadBundles(); // Refresh bundle list
-        await refreshFiles(); // Refresh file states
+        console.log(`Master bundle ${existingBundle ? 'updated' : 'created'} successfully!`);
+        await loadBundles();
+        await refreshFiles();
       } else {
         console.error('Failed to create master bundle:', result.error);
+        throw new Error(result.error || 'Failed to create master bundle');
       }
     } catch (error) {
       console.error('Error creating master bundle:', error);
-      throw error; // Rethrow for UI handling
+      throw error;
     }
   }, [directoryHandle, watchedFiles, ignorePatterns, loadBundles, refreshFiles]);
+
+  // Update bundle - placeholder for future implementation
+  const updateBundle = useCallback(async (
+    bundleName: string,
+    filesToInclude: any[],
+    filesToRemove?: string[]
+  ) => {
+    // TODO: Implement bundle update logic
+    console.log('Bundle update not yet implemented:', { bundleName, filesToInclude, filesToRemove });
+    return { success: false, error: 'Bundle update not yet implemented' };
+  }, []);
 
   const value = {
     bundles,
@@ -293,6 +319,7 @@ export function BundleProvider({ children }: { children: React.ReactNode }) {
     createBundle,
     createTagBundle,
     createMasterBundle,
+    updateBundle,
     loadBundles,
   };
 

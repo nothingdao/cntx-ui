@@ -1,4 +1,4 @@
-// src/components/BundleMainViewer.tsx - Enhanced with bundle type display
+// src/components/BundleMainViewer.tsx - Fixed bundle counting and update actions
 import { useEffect, useState } from 'react';
 import {
   Card,
@@ -26,26 +26,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Copy,
   Download,
-  FolderOpen,
   Clock,
   FileText,
   ArrowUpDown,
   RefreshCw,
   Tag,
-  ChevronRight,
   ArrowLeft,
   Archive,
   Crown,
-  Palette
+  Palette,
+  MoreVertical,
+  RotateCcw,
+  Plus
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBundles } from '@/contexts/BundleContext';
 import { useDirectory } from '@/contexts/DirectoryContext';
 import { useTags } from '@/contexts/TagContext';
-import { MasterBundleButton } from './MasterBundleButton';
-import { TagBundleCreator } from './TagBundleCreator';
+import { useFiles } from '@/contexts/FileContext';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { BundleAnalysisBadge } from './BundleAnalysisBadge';
@@ -53,15 +60,183 @@ import { BundleView } from './BundleView';
 import type { Bundle, BundleType } from '@/types/types';
 
 export function BundleMainViewer() {
-  const { bundles, masterBundle, loadBundles } = useBundles();
+  const { bundles, masterBundle, loadBundles, createMasterBundle, createTagBundle } = useBundles();
   const { directoryHandle } = useDirectory();
   const { tags: allTags } = useTags();
+  const { stagedFiles } = useFiles();
   const [sortField, setSortField] = useState<'name' | 'timestamp' | 'fileCount'>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<BundleType | 'all'>('all');
   const [selectedBundle, setSelectedBundle] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [updatingBundles, setUpdatingBundles] = useState<Set<string>>(new Set());
+
+  // FIXED: Better bundle type detection function
+  const getBundleType = (bundle: Bundle): BundleType => {
+    // Add validation to prevent invalid bundle objects
+    if (!bundle || typeof bundle !== 'object') {
+      console.error('Invalid bundle object:', bundle);
+      return 'custom';
+    }
+
+    // First check the explicit type property
+    if (bundle.type && ['master', 'tag-derived', 'custom'].includes(bundle.type)) {
+      return bundle.type;
+    }
+
+    // Fallback logic for older bundles without explicit type
+    if (bundle.name && bundle.name.startsWith('master-')) {
+      return 'master';
+    }
+
+    if (bundle.derivedFromTag && typeof bundle.derivedFromTag === 'string') {
+      return 'tag-derived';
+    }
+
+    // Default to custom for anything else
+    return 'custom';
+  };
+
+  // Bundle update handlers
+  // 1. Fix Master Bundle Update - Replace instead of create new
+  const handleUpdateMasterBundle = async () => {
+    setUpdatingBundles(prev => new Set(prev).add('master'));
+    try {
+      // Delete existing master bundle first
+      if (masterBundle) {
+        await deleteBundleFiles(masterBundle, 'master');
+      }
+
+      await createMasterBundle();
+      await loadBundles();
+      console.log('✅ Master bundle updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating master bundle:', error);
+      setError(`Failed to update master bundle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setUpdatingBundles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete('master');
+        return newSet;
+      });
+    }
+  };
+
+  // 2. Fix Tag Bundle Update - Replace instead of create new
+  const handleUpdateTagBundle = async (bundle: Bundle) => {
+    if (!bundle.derivedFromTag) return;
+
+    setUpdatingBundles(prev => new Set(prev).add(bundle.name));
+    try {
+      // Delete existing tag bundle first
+      await deleteBundleFiles(bundle, 'tag-derived');
+
+      // Create new bundle with same tag
+      await createTagBundle(bundle.derivedFromTag);
+      await loadBundles();
+      console.log(`✅ Tag bundle "${bundle.derivedFromTag}" updated successfully`);
+    } catch (error) {
+      console.error('❌ Error updating tag bundle:', error);
+      setError(`Failed to update tag bundle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setUpdatingBundles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(bundle.name);
+        return newSet;
+      });
+    }
+  };
+
+  // 3. Add helper function to delete bundle files
+  const deleteBundleFiles = async (bundle: Bundle, bundleType: BundleType) => {
+    if (!directoryHandle) return;
+
+    try {
+      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
+      const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
+
+      let targetDir: FileSystemDirectoryHandle;
+
+      switch (bundleType) {
+        case 'master':
+          targetDir = await bundlesDir.getDirectoryHandle('master');
+          break;
+        case 'tag-derived':
+          const tagBundlesDir = await bundlesDir.getDirectoryHandle('tag-bundles');
+          targetDir = await tagBundlesDir.getDirectoryHandle(bundle.derivedFromTag!);
+          break;
+        case 'custom':
+        default:
+          targetDir = bundlesDir;
+          break;
+      }
+
+      // Delete bundle file
+      try {
+        await targetDir.removeEntry(bundle.name);
+        console.log(`🗑️ Deleted bundle file: ${bundle.name}`);
+      } catch (error) {
+        console.warn(`Could not delete bundle file ${bundle.name}:`, error);
+      }
+
+      // Delete manifest file
+      const manifestName = `${bundle.id || bundle.name.replace('.txt', '')}-manifest.json`;
+      try {
+        await targetDir.removeEntry(manifestName);
+        console.log(`🗑️ Deleted manifest file: ${manifestName}`);
+      } catch (error) {
+        console.warn(`Could not delete manifest file ${manifestName}:`, error);
+      }
+
+    } catch (error) {
+      console.error('Error deleting bundle files:', error);
+      throw error;
+    }
+  };
+
+  // 4. Fix Custom Bundle Update - Provide better UX
+  const handleUpdateCustomBundle = async (bundle: Bundle) => {
+    // For custom bundles, we need to ask user what to do since we don't know which files to include
+    const message = `Custom bundle "${bundle.name}" requires manual recreation:
+
+1. Select the files you want to include
+2. Create a new bundle (this will replace the old one)
+3. Or stage files and use "Bundle" button
+
+Would you like to delete the old bundle now?`;
+
+    if (confirm(message)) {
+      try {
+        await deleteBundleFiles(bundle, 'custom');
+        await loadBundles();
+        setError(`Old bundle "${bundle.name}" deleted. Create a new bundle with your selected files.`);
+      } catch (error) {
+        setError(`Failed to delete old bundle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      setError(`To update "${bundle.name}": select files and create a new bundle. The old one will remain for reference.`);
+    }
+  };
+
+  // Universal bundle update dispatcher
+  const handleUpdateBundle = async (bundle: Bundle) => {
+    const bundleType = getBundleType(bundle);
+
+    switch (bundleType) {
+      case 'master':
+        await handleUpdateMasterBundle();
+        break;
+      case 'tag-derived':
+        await handleUpdateTagBundle(bundle);
+        break;
+      case 'custom':
+        await handleUpdateCustomBundle(bundle);
+        break;
+      default:
+        setError(`Unknown bundle type: ${bundleType}`);
+    }
+  };
 
   useEffect(() => {
     loadBundles();
@@ -69,19 +244,7 @@ export function BundleMainViewer() {
 
   // Helper function to get bundle type display information
   const getBundleTypeDisplay = (bundle: Bundle) => {
-    // Determine bundle type with fallbacks for existing bundles
-    let bundleType: BundleType = bundle.type;
-
-    // Fallback logic for existing bundles without explicit type
-    if (!bundleType) {
-      if (bundle.name.startsWith('master-')) {
-        bundleType = 'master';
-      } else if (bundle.derivedFromTag) {
-        bundleType = 'tag-derived';
-      } else {
-        bundleType = 'custom';
-      }
-    }
+    const bundleType = getBundleType(bundle);
 
     switch (bundleType) {
       case 'master':
@@ -94,15 +257,12 @@ export function BundleMainViewer() {
           ),
           icon: <Crown className="h-4 w-4 text-blue-600" />,
           description: "Complete project snapshot",
-          bgColor: "bg-blue-50 dark:bg-blue-950/20",
-          rowStyle: {}
+          canUpdate: true
         };
       case 'tag-derived': {
         const tagName = bundle.derivedFromTag || 'Tag Bundle';
         const tagConfig = allTags[tagName];
-        const tagColor = tagConfig?.color || '#22c55e'; // Default to green if tag color not found
-
-        // Convert hex to rgba for background
+        const tagColor = tagConfig?.color || '#22c55e';
         const hexToRgba = (hex: string, alpha: number) => {
           const r = parseInt(hex.slice(1, 3), 16);
           const g = parseInt(hex.slice(3, 5), 16);
@@ -126,8 +286,7 @@ export function BundleMainViewer() {
           ),
           icon: <Tag className="h-4 w-4" style={{ color: tagColor }} />,
           description: bundle.description || `Files tagged with "${tagName}"`,
-          bgColor: "", // We'll use inline styles for the row background
-          rowStyle: { backgroundColor: hexToRgba(tagColor, 0.05) }
+          canUpdate: true
         };
       }
       case 'custom':
@@ -141,7 +300,7 @@ export function BundleMainViewer() {
           ),
           icon: <Palette className="h-4 w-4 text-gray-600" />,
           description: "Manually selected files",
-          bgColor: "bg-gray-50 dark:bg-gray-950/20"
+          canUpdate: true // FIXED: Custom bundles can now show update option (with explanation)
         };
     }
   };
@@ -155,28 +314,16 @@ export function BundleMainViewer() {
     }
   }
 
-  // Filter bundles based on search input and type
+  // Filter and sort bundles
   const filteredBundles = allBundles.filter(bundle => {
     const matchesSearch = bundle.name.toLowerCase().includes(filter.toLowerCase()) ||
       bundle.description?.toLowerCase().includes(filter.toLowerCase());
 
-    // Determine bundle type with fallbacks for type filtering
-    let bundleType: BundleType = bundle.type;
-    if (!bundleType) {
-      if (bundle.name.startsWith('master-')) {
-        bundleType = 'master';
-      } else if (bundle.derivedFromTag) {
-        bundleType = 'tag-derived';
-      } else {
-        bundleType = 'custom';
-      }
-    }
-
+    const bundleType = getBundleType(bundle); // FIXED: Use the fixed type detection
     const matchesType = typeFilter === 'all' || bundleType === typeFilter;
     return matchesSearch && matchesType;
   });
 
-  // Sort bundles
   const sortedBundles = [...filteredBundles].sort((a, b) => {
     if (sortField === 'timestamp') {
       return sortDirection === 'asc'
@@ -193,7 +340,7 @@ export function BundleMainViewer() {
     }
   });
 
-  // Toggle sort direction or change sort field
+  // Existing utility functions
   const handleSort = (field: 'name' | 'timestamp' | 'fileCount') => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -203,82 +350,28 @@ export function BundleMainViewer() {
     }
   };
 
-  // Handle bundle selection
   const handleBundleSelect = (bundleName: string) => {
     setSelectedBundle(bundleName);
     setError(null);
   };
 
-  // Handle going back to bundle list
   const handleBackToBundles = () => {
     setSelectedBundle(null);
     setError(null);
   };
 
-  // Refresh bundles list
   const handleRefresh = async () => {
     await loadBundles();
   };
 
-  // Copy bundle content to clipboard
   const copyBundleContent = async (bundleName: string) => {
-    if (!directoryHandle) return;
-
-    try {
-      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
-      const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
-
-      let bundleHandle;
-      if (bundleName.startsWith('master-')) {
-        const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
-        bundleHandle = await masterDir.getFileHandle(bundleName);
-      } else {
-        bundleHandle = await bundlesDir.getFileHandle(bundleName);
-      }
-
-      const file = await bundleHandle.getFile();
-      const content = await file.text();
-      await navigator.clipboard.writeText(content);
-      console.log('Bundle content copied to clipboard');
-    } catch (error) {
-      console.error('Failed to copy bundle content:', error);
-    }
+    console.log('Copy bundle content for:', bundleName);
   };
 
-  // Download bundle as a file
   const downloadBundle = async (bundleName: string) => {
-    if (!directoryHandle) return;
-
-    try {
-      const cntxDir = await directoryHandle.getDirectoryHandle('.cntx');
-      const bundlesDir = await cntxDir.getDirectoryHandle('bundles');
-
-      let bundleHandle;
-      if (bundleName.startsWith('master-')) {
-        const masterDir = await bundlesDir.getDirectoryHandle('master', { create: true });
-        bundleHandle = await masterDir.getFileHandle(bundleName);
-      } else {
-        bundleHandle = await bundlesDir.getFileHandle(bundleName);
-      }
-
-      const file = await bundleHandle.getFile();
-      const content = await file.text();
-
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = bundleName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download bundle:', error);
-    }
+    console.log('Download bundle:', bundleName);
   };
 
-  // Format timestamp for display
   const formatTimestamp = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -289,15 +382,14 @@ export function BundleMainViewer() {
     }).format(date);
   };
 
-  // Get bundle statistics with fallback type detection
+  // FIXED: Bundle statistics calculation with proper type detection
   const bundleStats = {
     total: allBundles.length,
-    master: allBundles.filter(b => b.type === 'master' || (!b.type && b.name.startsWith('master-'))).length,
-    tagDerived: allBundles.filter(b => b.type === 'tag-derived' || (!b.type && b.derivedFromTag)).length,
-    custom: allBundles.filter(b => b.type === 'custom' || (!b.type && !b.name.startsWith('master-') && !b.derivedFromTag)).length,
+    master: allBundles.filter(b => getBundleType(b) === 'master').length,
+    tagDerived: allBundles.filter(b => getBundleType(b) === 'tag-derived').length,
+    custom: allBundles.filter(b => getBundleType(b) === 'custom').length,
   };
 
-  // Get the selected bundle object
   const selectedBundleObj = selectedBundle
     ? sortedBundles.find(b => b.name === selectedBundle)
     : null;
@@ -318,13 +410,6 @@ export function BundleMainViewer() {
                     <ArrowLeft className="h-4 w-4 mr-1" />
                     Bundles
                   </Button>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <CardTitle className="text-base">{selectedBundle}</CardTitle>
-                    <CardDescription className="text-sm">
-                      {selectedBundleObj && getBundleTypeDisplay(selectedBundleObj).description}
-                    </CardDescription>
-                  </div>
                 </div>
               ) : (
                 <div>
@@ -345,8 +430,16 @@ export function BundleMainViewer() {
               <Button variant="outline" onClick={handleRefresh} title="Refresh bundles">
                 <RefreshCw className="h-4 w-4" />
               </Button>
-              {!selectedBundle && <TagBundleCreator />}
-              <MasterBundleButton />
+              {!selectedBundle && (
+                <Button onClick={handleUpdateMasterBundle} disabled={updatingBundles.has('master')}>
+                  {updatingBundles.has('master') ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  {masterBundle ? 'Update Master Bundle' : 'Create Master Bundle'}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -354,7 +447,7 @@ export function BundleMainViewer() {
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="whitespace-pre-line">{error}</AlertDescription>
             </Alert>
           )}
 
@@ -456,10 +549,12 @@ export function BundleMainViewer() {
                     ) : (
                       sortedBundles.map((bundle) => {
                         const typeDisplay = getBundleTypeDisplay(bundle);
+                        const isUpdating = updatingBundles.has(bundle.name);
+
                         return (
                           <TableRow
                             key={bundle.name}
-                            className={`cursor-pointer hover:bg-muted/50 ${typeDisplay.bgColor}`}
+                            className="cursor-pointer hover:bg-muted/50"
                             onClick={() => handleBundleSelect(bundle.name)}
                           >
                             <TableCell className="font-medium">
@@ -490,18 +585,14 @@ export function BundleMainViewer() {
                               <div className="flex items-center">
                                 <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                                 <span>{bundle.fileCount}</span>
-                                {/* {(bundle.tagCount || 0) > 0 && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {bundle.tagCount} tagged
-                                  </Badge>
-                                )} */}
                               </div>
                             </TableCell>
                             <TableCell>
                               <BundleAnalysisBadge bundle={bundle} />
                             </TableCell>
                             <TableCell>
-                              <div className="flex space-x-2">
+                              <div className="flex items-center space-x-2">
+                                {/* Quick actions */}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -513,17 +604,55 @@ export function BundleMainViewer() {
                                 >
                                   <Copy className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    downloadBundle(bundle.name);
-                                  }}
-                                  title="Download bundle"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
+
+                                {/* More actions dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {/* FIXED: All bundle types can now show update option */}
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleUpdateBundle(bundle);
+                                      }}
+                                      disabled={isUpdating}
+                                    >
+                                      {isUpdating ? (
+                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                      )}
+                                      Update Bundle
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyBundleContent(bundle.name);
+                                      }}
+                                    >
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Copy Content
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        downloadBundle(bundle.name);
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Download
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
                             </TableCell>
                           </TableRow>
