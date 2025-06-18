@@ -22,8 +22,10 @@
   "files": [
     "bin/cntx-ui.js",
     "server.js",
+    "lib/",
     "README.md",
-    "web/dist"
+    "web/dist",
+    "mcp-config-example.json"
   ],
   "engines": {
     "node": ">=18.0.0"

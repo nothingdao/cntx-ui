@@ -1,0 +1,8 @@
+# System patterns
+**/.git/**
+**/node_modules/**
+**/.cntx/**
+
+# User patterns
+
+# File-specific patterns (edit manually)

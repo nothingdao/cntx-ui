@@ -1,0 +1,32 @@
+{
+  "bundles": {
+    "master": [
+      "**/*"
+    ],
+    "server": [
+      "server.js",
+      "bin/**/*"
+    ],
+    "frontend": [
+      "web/src/**/*",
+      "web/index.html"
+    ],
+    "ui-components": [
+      "web/src/components/**/*"
+    ],
+    "config": [
+      "package.json",
+      "web/package.json",
+      "*.config.*",
+      "web/*.config.*",
+      "web/tsconfig*.json",
+      "web/components.json",
+      "web/eslint.config.js"
+    ],
+    "docs": [
+      "README.md",
+      "web/README.md",
+      "*.md"
+    ]
+  }
+}

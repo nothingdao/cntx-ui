@@ -1,0 +1,25 @@
+# Development files
+*.log
+.DS_Store
+node_modules/
+.git/
+
+# Build artifacts we don't want
+.cntx/
+*.bak
+*.tgz
+build.sh
+test-local.sh  
+quick-fix.sh
+
+# Web source files - but NOT web/dist
+web/src/
+web/node_modules/
+web/package*.json
+web/vite.config.ts
+web/tsconfig*.json
+web/eslint.config.js
+web/components.json
+web/index.html
+web/public/
+web/README.md
